@@ -111,12 +111,16 @@ class Publish(object):
                 if remote['Name'].startswith('%s-' % component):
                     remote_snapshot = remote
                     break
+
+            # Check if latest merged snapshot has same source snapshots like us
             # Unfortunately we have to decide by description
+            match = False
             for source in re.findall(r"'(\w+-\d+)'", remote_snapshot['Description']):
-                match = True
                 if source not in snapshots:
                     match = False
                     break
+                else:
+                    match = True
 
             if match:
                 lg.info("Remote merge snapshot already exists: %s" % remote_snapshot['Name'])
@@ -139,6 +143,7 @@ class Publish(object):
                 data={
                     'Name': snapshot_name,
                     'SourceSnapshots': snapshots,
+                    'Description': "Merged from sources: %s" % ', '.join("'%s'" % snap for snap in snapshots),
                     'PackageRefs': package_refs,
                 }
             )
@@ -159,7 +164,7 @@ class Publish(object):
 
         self.client.do_put(
             '/publish/%s/%s' % (prefix, name),
-            { 'Snapshots': self.publish_snapshots }
+            {'Snapshots': self.publish_snapshots}
         )
 
     def create_publish(self, distribution):
@@ -182,21 +187,22 @@ class Publish(object):
                         and publish['Prefix'] == prefix:
                     # Update publish
                     match = True
+                    to_publish = [x['Name'] for x in self.publish_snapshots]
+                    published = [x['Name'] for x in publish['Sources']]
 
-                    to_publish = [ x['Name'] for x in self.publish_snapshots ].sort()
-                    published = [ x['Name'] for x in publish['Sources'] ].sort()
+                    to_publish.sort()
+                    published.sort()
+
+                    print "%s == %s" % (to_publish, published)
+
                     if to_publish == published:
                         lg.info("Publish %s is up to date" % name)
-                        break
-
-                    self.update_publish(distribution)
-
-                    if match:
-                        break
+                    else:
+                        self.update_publish(distribution)
 
             if not match:
                 # New publish
-                create_publish(distribution)
+                self.create_publish(distribution)
 
 
 class AptlyException(Exception):
