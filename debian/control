@@ -1,0 +1,11 @@
+Source: python-aptly
+Maintainer: Filip Pytloun <filip.pytloun@tcpcloud.eu>
+Section: python
+Priority: optional
+Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.6.6-3), debhelper (>= 9), dh-python, python-pbr
+Standards-Version: 3.9.1
+
+Package: python-aptly
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: API client and tools for Aptly
