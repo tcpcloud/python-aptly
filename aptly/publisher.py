@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import argparse
 from aptly.client import Aptly, Publish
 import yaml
@@ -26,6 +27,7 @@ def main():
     parser.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
     parser.add_argument('-v', '--verbose', action="store_true")
     parser.add_argument('-d', '--debug', action="store_true")
+    parser.add_argument('--cleanup-snapshots', action="store_true", help="Cleanup unused and old snapshots")
     parser.add_argument('--dry', '--dry-run', action="store_true")
     parser.add_argument('url', help="URL to Aptly API, eg. http://localhost:8080")
     args = parser.parse_args()
@@ -58,6 +60,10 @@ def main():
             distributions=repo['distributions'],
             snapshot=get_latest_snapshot(snapshots, name)
         )
+
+    if args.cleanup_snapshots:
+        publish.cleanup_snapshots()
+        sys.exit(0)
 
     publish.merge_snapshots()
     publish.do_publish()

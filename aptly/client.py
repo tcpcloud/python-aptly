@@ -59,6 +59,19 @@ class Aptly(object):
         )
         return self._process_result(res)
 
+    def do_delete(self, uri, timeout=None):
+        url = '%s%s' % (self.url, uri)
+        lg.debug("DELETE %s" % url)
+
+        if self.dry:
+            return
+
+        res = self.session.delete(
+            url,
+            timeout=timeout or self.timeout,
+        )
+        return self._process_result(res)
+
     def do_put(self, uri, data, timeout=None):
         data_json = json.dumps(data)
         url = '%s%s' % (self.url, uri)
@@ -170,6 +183,40 @@ class Publish(object):
     def create_publish(self, distribution):
         # TODO: publish_snapshots should be constructed per-distribution
         raise NotImplemented("Creation of new publish is not implemented")
+
+    def cleanup_snapshots(self):
+        exclude = []
+
+        # Add currently published snapshots into exclude list
+        publishes = self.client.do_get('/publish')
+        for publish in publishes:
+            exclude.extend(
+                [x['Name'] for x in publish['Sources']]
+            )
+
+        # Add last snapshots into exclude list
+        for component, snapshots in self.components.iteritems():
+            exclude.extend(snapshots)
+
+        exclude = self.list_uniq(exclude)
+
+        snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
+        for snapshot in snapshots:
+            if snapshot['Name'] not in exclude:
+                lg.info("Deleting snapshot %s" % snapshot['Name'])
+                try:
+                    self.client.do_delete('/snapshots/%s' % snapshot['Name'])
+                except AptlyException as e:
+                    if e.res.status_code == 409:
+                        lg.warning("Snapshot %s is being used, can't delete" % snapshot['Name'])
+                    else:
+                        raise
+
+    def list_uniq(self, seq):
+        keys = {}
+        for e in seq:
+            keys[e] = 1
+        return keys.keys()
 
     def do_publish(self):
         publishes = self.client.do_get('/publish')
