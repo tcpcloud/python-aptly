@@ -107,7 +107,7 @@ class Publish(object):
 
             # Look if merged snapshot doesn't already exist
             remote_snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
-            for remote in remote_snapshots:
+            for remote in remote_snapshots.reverse():
                 if remote['Name'].startswith('%s-' % component):
                     remote_snapshot = remote
                     break

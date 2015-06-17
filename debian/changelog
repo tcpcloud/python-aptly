@@ -1,3 +1,9 @@
+python-aptly (0.1.1) unstable; urgency=low
+
+  * Trivial fix
+
+ -- Filip Pytloun <filip@pytloun.cz>  Wed, 17 Jun 2015 15:05:22 +0200
+
 python-aptly (0.1) unstable; urgency=low
 
   * Initial release.

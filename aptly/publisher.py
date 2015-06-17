@@ -16,7 +16,7 @@ def load_config(config):
 
 
 def get_latest_snapshot(snapshots, name):
-    for snapshot in snapshots:
+    for snapshot in snapshots.reverse():
         if snapshot['Name'].startswith('%s-' % name):
             return snapshot['Name']
 
