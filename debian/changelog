@@ -1,3 +1,9 @@
+python-aptly (0.1.5) unstable; urgency=low
+
+  * Fix idempotency on merge snapshots
+
+ -- Filip Pytloun <filip@pytloun.cz>  Thu, 18 Jun 2015 09:17:05 +0200
+
 python-aptly (0.1.4) unstable; urgency=low
 
   * Parameter to cleanup unused snapshots

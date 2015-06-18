@@ -127,16 +127,13 @@ class Publish(object):
 
             # Check if latest merged snapshot has same source snapshots like us
             # Unfortunately we have to decide by description
-            match = False
-            for source in re.findall(r"'(\w+-\d+)'", remote_snapshot['Description']):
-                if source not in snapshots:
-                    match = False
-                    break
-                else:
-                    match = True
+            source_snapshots = re.findall(r"'([\w\d-]+)'", remote_snapshot['Description'])
+            snapshots_want = list(snapshots)
+            snapshots_want.sort()
+            source_snapshots.sort()
 
-            if match:
-                lg.info("Remote merge snapshot already exists: %s" % remote_snapshot['Name'])
+            if snapshots_want == source_snapshots:
+                lg.info("Remote merge snapshot already exists: %s (%s)" % (remote_snapshot['Name'], source_snapshots))
                 self.publish_snapshots.append({
                     'Component': component,
                     'Name': remote_snapshot['Name']
@@ -239,8 +236,6 @@ class Publish(object):
 
                     to_publish.sort()
                     published.sort()
-
-                    print "%s == %s" % (to_publish, published)
 
                     if to_publish == published:
                         lg.info("Publish %s is up to date" % name)
