@@ -1,3 +1,9 @@
+python-aptly (0.1.6) unstable; urgency=low
+
+  * Fix crash when there is no merged snapshot
+
+ -- Filip Pytloun <filip@pytloun.cz>  Fri, 19 Jun 2015 09:11:17 +0200
+
 python-aptly (0.1.5) unstable; urgency=low
 
   * Fix idempotency on merge snapshots

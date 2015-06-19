@@ -120,6 +120,7 @@ class Publish(object):
 
             # Look if merged snapshot doesn't already exist
             remote_snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
+            remote_snapshot = None
             for remote in reversed(remote_snapshots):
                 if remote['Name'].startswith('%s-' % component):
                     remote_snapshot = remote
@@ -127,7 +128,10 @@ class Publish(object):
 
             # Check if latest merged snapshot has same source snapshots like us
             # Unfortunately we have to decide by description
-            source_snapshots = re.findall(r"'([\w\d-]+)'", remote_snapshot['Description'])
+            if remote_snapshot:
+                source_snapshots = re.findall(r"'([\w\d-]+)'", remote_snapshot['Description'])
+            else:
+                source_snapshots = []
             snapshots_want = list(snapshots)
             snapshots_want.sort()
             source_snapshots.sort()
