@@ -6,6 +6,7 @@ import argparse
 from aptly.client import Aptly, Publish
 import yaml
 import logging
+import re
 
 logging.basicConfig()
 lg_root = logging.getLogger('aptly')
@@ -18,7 +19,7 @@ def load_config(config):
 
 def get_latest_snapshot(snapshots, name):
     for snapshot in reversed(snapshots):
-        if snapshot['Name'].startswith('%s-' % name):
+        if re.match(r'%s-\d+' % name, snapshot['Name']):
             return snapshot['Name']
 
 

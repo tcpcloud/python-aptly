@@ -1,3 +1,9 @@
+python-aptly (0.1.7) unstable; urgency=low
+
+  * Fix issue with last snapshot lookup
+
+ -- Filip Pytloun <filip@pytloun.cz>  Tue, 23 Jun 2015 16:08:03 +0200
+
 python-aptly (0.1.6) unstable; urgency=low
 
   * Fix crash when there is no merged snapshot
