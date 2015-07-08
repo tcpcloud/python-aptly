@@ -134,13 +134,14 @@ class PublishManager(object):
             )
 
         # Add last snapshots into exclude list
+        # TODO: ignore snapshots that are source for merged snapshots
         snapshot_latest = []
         for snapshot in snapshots:
             base_name = snapshot['Name'].split('-')[0]
             if base_name not in snapshot_latest:
                 snapshot_latest.append(base_name)
                 if snapshot['Name'] not in exclude:
-                    lg.debug("Not deleting latest but unused snapshot %s" % snapshot['Name'])
+                    lg.debug("Not deleting latest snapshot %s" % snapshot['Name'])
                     exclude.append(snapshot['Name'])
 
         exclude = self.list_uniq(exclude)

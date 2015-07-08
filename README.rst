@@ -41,3 +41,10 @@ Configuration above will create two publishes:
   main-`<timestamp>` by merging snapshots aptly-`<timestamp>` and
   trusty-main-`<timestamp>` snapshots)
 - ``nightly/trusty`` with component cloudlab
+
+Known issues
+============
+
+- determine source snapshots correctly
+  (`#271 <https://github.com/smira/aptly/issues/271>`_)
+- cleanup merged snapshots before cleaning up source ones
