@@ -3,7 +3,8 @@
 
 import sys
 import argparse
-from aptly.client import Aptly, PublishManager
+from aptly.client import Aptly
+from aptly.publisher import PublishManager
 import yaml
 import logging
 import re
