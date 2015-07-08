@@ -243,13 +243,31 @@ class Publish(object):
             })
 
     def update_publish(self):
+        lg.info("Updating publish, distribution=%s/%s snapshots=%s" %
+                (self.prefix or '.', self.distribution,
+                 self.publish_snapshots))
+
         self.client.do_put(
             '/publish/%s/%s' % (self.prefix, self.distribution),
             {'Snapshots': self.publish_snapshots}
         )
 
     def create_publish(self):
-        raise NotImplemented("Creation of new publish is not implemented")
+        lg.info("Creating new publish, distribution=%s/%s snapshots=%s" %
+                (self.prefix or '.', self.distribution,
+                 self.publish_snapshots))
+
+        if self.prefix:
+            prefix = '/%s' % self.prefix
+
+        self.client.do_post(
+            '/publish%s' % (prefix or ''),
+            {
+                "SourceKind": "snapshot",
+                "Distribution": self.distribution,
+                "Sources": self.publish_snapshots,
+            },
+        )
 
     def get_publish(self):
         """
