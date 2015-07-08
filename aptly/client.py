@@ -123,6 +123,7 @@ class PublishManager(object):
         return keys.keys()
 
     def cleanup_snapshots(self):
+        snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
         exclude = []
 
         # Add currently published snapshots into exclude list
@@ -133,12 +134,17 @@ class PublishManager(object):
             )
 
         # Add last snapshots into exclude list
-        for component, snapshots in self.components.iteritems():
-            exclude.extend(snapshots)
+        snapshot_latest = []
+        for snapshot in snapshots:
+            base_name = snapshot['Name'].split('-')[0]
+            if base_name not in snapshot_latest:
+                snapshot_latest.append(base_name)
+                if snapshot['Name'] not in exclude:
+                    lg.debug("Not deleting latest but unused snapshot %s" % snapshot['Name'])
+                    exclude.append(snapshot['Name'])
 
         exclude = self.list_uniq(exclude)
 
-        snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
         for snapshot in snapshots:
             if snapshot['Name'] not in exclude:
                 lg.info("Deleting snapshot %s" % snapshot['Name'])
