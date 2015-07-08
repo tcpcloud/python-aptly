@@ -1,4 +1,4 @@
-python-aptly (0.1.8) unstable; urgency=medium
+python-aptly (0.2.0) unstable; urgency=medium
 
   * code refactor and fixes
   * ability to create new publishes
