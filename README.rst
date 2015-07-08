@@ -12,6 +12,11 @@ Publisher
 Publisher is tool for publishing latest snapshots.
 It takes configuration in yaml format which defines what to publish and how.
 
+Publisher expects snapshots in format ``<name>-<timestamp>``.
+
+Example configuration
+---------------------
+
 .. code-block:: yaml
     mirror:
       aptly:
@@ -21,10 +26,18 @@ It takes configuration in yaml format which defines what to publish and how.
       trusty-main:
         component: main
         distributions:
-          - trusty-nightly
+          - nightly/trusty
 
     repo:
       cloudlab:
         component: cloudlab
         distributions:
-          - trusty-nightly
+          - nightly/trusty
+          - testing/trusty
+
+Configuration above will create two publishes:
+
+- ``nightly/trusty`` with component cloudlab and main (created snapshot
+  main-`<timestamp>` by merging snapshots aptly-`<timestamp>` and
+  trusty-main-`<timestamp>` snapshots)
+- ``nightly/trusty`` with component cloudlab

@@ -1,3 +1,10 @@
+python-aptly (0.1.8) unstable; urgency=medium
+
+  * code refactor and fixes
+  * ability to create new publishes
+
+ -- Filip Pytloun <filip@pytloun.cz>  Wed, 08 Jul 2015 17:43:52 +0200
+
 python-aptly (0.1.7) unstable; urgency=low
 
   * Fix issue with last snapshot lookup
