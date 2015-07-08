@@ -276,6 +276,8 @@ class Publish(object):
         publishes = self.client.do_get('/publish')
         if not self.prefix:
             prefix = '.'
+        else:
+            prefix = self.prefix
 
         for publish in publishes:
             if publish['Distribution'] == self.distribution \
