@@ -88,26 +88,101 @@ class Aptly(object):
         return self._process_result(res)
 
 
-class Publish(object):
+class PublishManager(object):
+    """
+    Manage multiple publishes
+    """
     def __init__(self, client):
         self.client = client
+        self._publishes = {}
+        self.timestamp = int(time.time())
+
+    def publish(self, distribution):
+        """
+        Get or create publish
+        """
+        try:
+            return self._publishes[distribution]
+        except KeyError:
+            self._publishes[distribution] = Publish(self.client, distribution, timestamp=self.timestamp)
+            return self._publishes[distribution]
+
+    def add(self, name, snapshot, distributions, component='main'):
+        """ Add mirror or repo to publish """
+        for dist in distributions:
+            self.publish(dist).add(name, snapshot, component)
+
+    def do_publish(self, *args, **kwargs):
+        for publish in self._publishes.itervalues():
+            publish.do_publish(*args, **kwargs)
+
+    def list_uniq(self, seq):
+        keys = {}
+        for e in seq:
+            keys[e] = 1
+        return keys.keys()
+
+    def cleanup_snapshots(self):
+        exclude = []
+
+        # Add currently published snapshots into exclude list
+        publishes = self.client.do_get('/publish')
+        for publish in publishes:
+            exclude.extend(
+                [x['Name'] for x in publish['Sources']]
+            )
+
+        # Add last snapshots into exclude list
+        for component, snapshots in self.components.iteritems():
+            exclude.extend(snapshots)
+
+        exclude = self.list_uniq(exclude)
+
+        snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
+        for snapshot in snapshots:
+            if snapshot['Name'] not in exclude:
+                lg.info("Deleting snapshot %s" % snapshot['Name'])
+                try:
+                    self.client.do_delete('/snapshots/%s' % snapshot['Name'])
+                except AptlyException as e:
+                    if e.res.status_code == 409:
+                        lg.warning("Snapshot %s is being used, can't delete" % snapshot['Name'])
+                    else:
+                        raise
+
+
+class Publish(object):
+    """
+    Single publish object
+    """
+    def __init__(self, client, distribution, timestamp=None):
+        self.client = client
+
+        dist_split = distribution.split('/')
+        self.distribution = dist_split[-1]
+        if dist_split[0] != self.distribution:
+            self.prefix = dist_split[0]
+        else:
+            self.prefix = ''
+
+        if not timestamp:
+            self.timestamp = int(time.time())
+        else:
+            self.timestamp = timestamp
+
         self.components = {}
-        self.distributions = {}
         self.publish_snapshots = []
 
-    def add(self, name, distributions, snapshot, component='main'):
+    def add(self, name, snapshot, component='main'):
         try:
             self.components[component].append(snapshot)
         except KeyError:
             self.components[component] = [snapshot]
 
-        for distribution in distributions:
-            try:
-                self.distributions[distribution].append(self.components[component])
-            except KeyError:
-                self.distributions[distribution] = [self.components[component]]
-
     def merge_snapshots(self):
+        """
+        Create component snapshots by merging other snapshots of same component
+        """
         for component, snapshots in self.components.iteritems():
             if len(snapshots) <= 1:
                 # Only one snapshot, no need to merge
@@ -144,7 +219,7 @@ class Publish(object):
                 })
                 continue
 
-            snapshot_name = '%s-%s' % (component, int(time.time()))
+            snapshot_name = '%s-%s' % (component, self.timestamp)
             lg.info("Creating merge snapshot %s for component %s of snapshots %s" % (snapshot_name, component, snapshots))
             package_refs = []
             for snapshot in snapshots:
@@ -167,88 +242,48 @@ class Publish(object):
                 'Name': snapshot_name
             })
 
-    def update_publish(self, distribution):
-        # TODO: publish_snapshots should be constructed per-distribution
-        dist_split = distribution.split('/')
-        name = dist_split[-1]
-        if dist_split[0] != name:
-            prefix = dist_split[0]
-        else:
-            prefix = ''
-
+    def update_publish(self):
         self.client.do_put(
-            '/publish/%s/%s' % (prefix, name),
+            '/publish/%s/%s' % (self.prefix, self.distribution),
             {'Snapshots': self.publish_snapshots}
         )
 
-    def create_publish(self, distribution):
-        # TODO: publish_snapshots should be constructed per-distribution
+    def create_publish(self):
         raise NotImplemented("Creation of new publish is not implemented")
 
-    def cleanup_snapshots(self):
-        exclude = []
-
-        # Add currently published snapshots into exclude list
+    def get_publish(self):
+        """
+        Try to find our publish
+        """
         publishes = self.client.do_get('/publish')
+        if not self.prefix:
+            prefix = '.'
+
         for publish in publishes:
-            exclude.extend(
-                [x['Name'] for x in publish['Sources']]
-            )
-
-        # Add last snapshots into exclude list
-        for component, snapshots in self.components.iteritems():
-            exclude.extend(snapshots)
-
-        exclude = self.list_uniq(exclude)
-
-        snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
-        for snapshot in snapshots:
-            if snapshot['Name'] not in exclude:
-                lg.info("Deleting snapshot %s" % snapshot['Name'])
-                try:
-                    self.client.do_delete('/snapshots/%s' % snapshot['Name'])
-                except AptlyException as e:
-                    if e.res.status_code == 409:
-                        lg.warning("Snapshot %s is being used, can't delete" % snapshot['Name'])
-                    else:
-                        raise
-
-    def list_uniq(self, seq):
-        keys = {}
-        for e in seq:
-            keys[e] = 1
-        return keys.keys()
+            if publish['Distribution'] == self.distribution \
+                    and publish['Prefix'] == prefix:
+                return publish
+        return False
 
     def do_publish(self):
-        publishes = self.client.do_get('/publish')
-        for distribution in self.distributions.iterkeys():
-            dist_split = distribution.split('/')
-            name = dist_split[-1]
-            if dist_split[0] != name:
-                prefix = dist_split[0]
+        self.merge_snapshots()
+        publish = self.get_publish()
+
+        if not publish:
+            # New publish
+            self.create_publish()
+        else:
+            # Test if publish is up to date
+            to_publish = [x['Name'] for x in self.publish_snapshots]
+            published = [x['Name'] for x in publish['Sources']]
+
+            to_publish.sort()
+            published.sort()
+
+            if to_publish == published:
+                lg.info("Publish %s/%s is up to date" % (self.prefix or '.', self.distribution))
             else:
-                prefix = '.'
-
-            match = False
-            for publish in publishes:
-                if publish['Distribution'] == name \
-                        and publish['Prefix'] == prefix:
-                    # Update publish
-                    match = True
-                    to_publish = [x['Name'] for x in self.publish_snapshots]
-                    published = [x['Name'] for x in publish['Sources']]
-
-                    to_publish.sort()
-                    published.sort()
-
-                    if to_publish == published:
-                        lg.info("Publish %s is up to date" % name)
-                    else:
-                        self.update_publish(distribution)
-
-            if not match:
-                # New publish
-                self.create_publish(distribution)
+                self.update_publish()
 
 
 class AptlyException(Exception):

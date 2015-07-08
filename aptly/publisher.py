@@ -3,7 +3,7 @@
 
 import sys
 import argparse
-from aptly.client import Aptly, Publish
+from aptly.client import Aptly, PublishManager
 import yaml
 import logging
 import re
@@ -42,32 +42,37 @@ def main():
     config = load_config(args.config)
 
     client = Aptly(args.url, dry=args.dry)
-    publish = Publish(client)
+    publishmgr = PublishManager(client)
+
+    if args.cleanup_snapshots:
+        publishmgr.cleanup_snapshots()
+        sys.exit(0)
 
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
 
     for name, repo in config.get('mirror', {}).iteritems():
-        publish.add(
+        snapshot = get_latest_snapshot(snapshots, name)
+        if not snapshot:
+            continue
+        publishmgr.add(
             name,
             component=repo.get('component', 'main'),
             distributions=repo['distributions'],
-            snapshot=get_latest_snapshot(snapshots, name)
+            snapshot=snapshot
         )
 
     for name, repo in config.get('repo', {}).iteritems():
-        publish.add(
+        snapshot = get_latest_snapshot(snapshots, name)
+        if not snapshot:
+            continue
+        publishmgr.add(
             name,
             component=repo.get('component', 'main'),
             distributions=repo['distributions'],
-            snapshot=get_latest_snapshot(snapshots, name)
+            snapshot=snapshot
         )
 
-    if args.cleanup_snapshots:
-        publish.cleanup_snapshots()
-        sys.exit(0)
-
-    publish.merge_snapshots()
-    publish.do_publish()
+    publishmgr.do_publish()
 
 
 if __name__ == '__main__':
