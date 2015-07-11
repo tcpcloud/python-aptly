@@ -1,4 +1,4 @@
-python-aptly (0.2.2) unstable; urgency=medium
+python-aptly (0.2.2) trusty; urgency=medium
 
   * more refactoring
 
