@@ -18,6 +18,7 @@ Example configuration
 ---------------------
 
 .. code-block:: yaml
+
     mirror:
       aptly:
         component: main
