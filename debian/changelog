@@ -1,3 +1,9 @@
+python-aptly (0.3.1) trusty; urgency=medium
+
+  * fix recreation of publish
+
+ -- Filip Pytloun <filip@pytloun.cz>  Fri, 07 Aug 2015 16:42:12 +0200
+
 python-aptly (0.3) trusty; urgency=medium
 
   * parameter to recreate publish

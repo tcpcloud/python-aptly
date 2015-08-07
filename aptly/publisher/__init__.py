@@ -241,5 +241,8 @@ class Publish(object):
                 lg.info("Publish %s/%s is up to date" % (self.prefix or '.', self.distribution))
             else:
                 if recreate:
+                    lg.info("Recreating publish %s/%s" % (self.prefix or '.', self.distribution))
                     self.drop_publish()
-                self.update_publish()
+                    self.create_publish()
+                else:
+                    self.update_publish()

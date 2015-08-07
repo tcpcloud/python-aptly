@@ -31,7 +31,13 @@ Drop publish and create it again, only way to add new components
 \-\-dry, \-\-dry\-run
 
 .SH BUGS
-No known bugs.
+.TP
+Determine source snapshots correctly
+- at the moment it relies on snapshot comments that may not be reliable
+- see https://github.com/smira/aptly/issues/271
+.TP
+Cleanup merged snapshots before cleaning up source ones.
+ - so it's needed to run cleanup multiple times to clean up everything.
 
 .SH AUTHOR
 Filip Pytloun <filip.pytloun@tcpcloud.eu>
