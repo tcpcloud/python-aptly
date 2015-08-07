@@ -82,8 +82,9 @@ class Publish(object):
     """
     Single publish object
     """
-    def __init__(self, client, distribution, timestamp=None):
+    def __init__(self, client, distribution, timestamp=None, recreate=False):
         self.client = client
+        self.recreate = recreate
 
         dist_split = distribution.split('/')
         self.distribution = dist_split[-1]
@@ -101,6 +102,9 @@ class Publish(object):
         self.publish_snapshots = []
 
     def add(self, name, snapshot, component='main'):
+        """
+        Add snapshot of component to publish
+        """
         try:
             self.components[component].append(snapshot)
         except KeyError:
@@ -169,6 +173,12 @@ class Publish(object):
                 'Name': snapshot_name
             })
 
+    def drop_publish(self):
+        lg.info("Deleting publish, distribution=%s/%s" %
+                (self.prefix or '.', self.distribution))
+
+        self.client.do_delete('/publish/%s/%s' % (self.prefix, self.distribution))
+
     def update_publish(self):
         lg.info("Updating publish, distribution=%s/%s snapshots=%s" %
                 (self.prefix or '.', self.distribution,
@@ -212,7 +222,7 @@ class Publish(object):
                 return publish
         return False
 
-    def do_publish(self):
+    def do_publish(self, recreate=False):
         self.merge_snapshots()
         publish = self.get_publish()
 
@@ -230,4 +240,6 @@ class Publish(object):
             if to_publish == published:
                 lg.info("Publish %s/%s is up to date" % (self.prefix or '.', self.distribution))
             else:
+                if recreate:
+                    self.drop_publish()
                 self.update_publish()

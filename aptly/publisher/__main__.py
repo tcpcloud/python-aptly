@@ -30,6 +30,7 @@ def main():
     parser.add_argument('-v', '--verbose', action="store_true")
     parser.add_argument('-d', '--debug', action="store_true")
     parser.add_argument('--cleanup-snapshots', action="store_true", help="Cleanup unused and old snapshots")
+    parser.add_argument('--recreate', action="store_true", help="Drop publish and create it again, only way to add new components")
     parser.add_argument('--dry', '--dry-run', action="store_true")
     parser.add_argument('url', help="URL to Aptly API, eg. http://localhost:8080")
     args = parser.parse_args()
@@ -73,7 +74,7 @@ def main():
             snapshot=snapshot
         )
 
-    publishmgr.do_publish()
+    publishmgr.do_publish(recreate=args.recreate)
 
 
 if __name__ == '__main__':

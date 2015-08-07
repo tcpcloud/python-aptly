@@ -3,9 +3,16 @@ Maintainer: Filip Pytloun <filip.pytloun@tcpcloud.eu>
 Section: python
 Priority: optional
 Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.6.6-3), debhelper (>= 9), dh-python, python-pbr
-Standards-Version: 3.9.1
+Standards-Version: 3.9.6
+X-Python-Version: >= 2.6
+Homepage: https://git.tcpcloud.eu/packages/python-aptly
+Vcs-Browser: https://git.tcpcloud.eu/packages/python-aptly/tree/master
+Vcs-Git: https://git.tcpcloud.eu/packages/python-aptly.git
 
 Package: python-aptly
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
 Description: API client and tools for Aptly
+ .
+ aptly-publisher - tool that allows one to create aptly multi-component
+ publishes from JSON definition of repositories and mirrors

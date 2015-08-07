@@ -1,0 +1,40 @@
+.TH man 1 "07 Aug 2015" "1.0" "aptly-publisher man page"
+.SH NAME
+aptly\-publisher \- tool for easy creation of Aptly multi component publishes
+
+.SH SYNOPSIS
+.B aptly\-publisher
+[\-h] [\-c CONFIG] [\-v] [\-d] [\-\-cleanup-snapshots]
+[\-\-recreate] [\-\-dry]
+.IR url
+
+.SH DESCRIPTION
+.B aptly\-publisher
+allows one to create aptly multi-component publishes from JSON definition of
+repositories and mirrors
+
+.SH OPTIONS
+.TP
+\-c CONFIG, \-\-config CONFIG
+Path to configuration YAML file
+.TP
+\-v, \-\-verbose
+.TP
+\-d, \-\-debug
+.TP
+\-\-cleanup-snapshots
+Cleanup unused and old snapshots
+.TP
+\-\-recreate
+Drop publish and create it again, only way to add new components
+.TP
+\-\-dry, \-\-dry\-run
+
+.SH BUGS
+No known bugs.
+
+.SH AUTHOR
+Filip Pytloun <filip.pytloun@tcpcloud.eu>
+
+.SH COPYRIGHT
+(C) 2015 tcp cloud
