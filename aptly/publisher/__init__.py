@@ -111,8 +111,8 @@ class Publish(object):
         """
         publishes = self.client.do_get('/publish')
         for publish in publishes:
-            if publish['distribution'] == self.distribution and \
-                    publish['prefix'] == (self.prefix or '.'):
+            if publish['Distribution'] == self.distribution and \
+                    publish['Prefix'] == (self.prefix or '.'):
                 return publish
         raise NoSuchPublish("Publish %s/%s does not exist" % ((self.prefix or '.'), self.distribution))
 
@@ -121,7 +121,7 @@ class Publish(object):
         Load publish info from remote
         """
         publish = self._get_publish()
-        for source in publish['sources']:
+        for source in publish['Sources']:
             component = source['Component']
             snapshot = source['Name']
             self.publish_snapshots.append({
