@@ -1,3 +1,9 @@
+python-aptly (0.4.2) trusty; urgency=medium
+
+  * fix getting snapshot name vs snapshot object
+
+ -- Filip Pytloun <filip@pytloun.cz>  Thu, 20 Aug 2015 17:06:15 +0200
+
 python-aptly (0.4.1) trusty; urgency=medium
 
   * fix wrong key

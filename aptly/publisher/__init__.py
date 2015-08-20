@@ -131,7 +131,7 @@ class Publish(object):
 
             snapshot_remote = self._find_snapshot(snapshot)
             for source in self._get_source_snapshots(snapshot_remote, fallback_self=True):
-                self.add(source, component)
+                self.add(source['Name'], component)
 
     def add(self, snapshot, component='main'):
         """
@@ -155,7 +155,7 @@ class Publish(object):
 
     def _get_source_snapshots(self, snapshot, fallback_self=False):
         """
-        Get list of source snapshots of given snapshot
+        Get list of source snapshot names of given snapshot
 
         TODO: we have to decide by description at the moment
         """
@@ -164,7 +164,7 @@ class Publish(object):
 
         source_snapshots = re.findall(r"'([\w\d-]+)'", snapshot['Description'])
         if not source_snapshots and fallback_self:
-            source_snapshots = [snapshot]
+            source_snapshots = [snapshot['Name']]
 
         source_snapshots.sort()
         return source_snapshots
