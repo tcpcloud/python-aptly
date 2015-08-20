@@ -4,14 +4,26 @@ aptly\-publisher \- tool for easy creation of Aptly multi component publishes
 
 .SH SYNOPSIS
 .B aptly\-publisher
-[\-h] [\-c CONFIG] [\-v] [\-d] [\-\-cleanup-snapshots]
-[\-\-recreate] [\-\-dry]
-.IR url
+[-h] [-v] [-d] [--dry] --url URL [--recreate]
+[-c CONFIG] [--source SOURCE] [--target TARGET]
+[--components COMPONENTS [COMPONENTS ...]]
+.IR action
 
 .SH DESCRIPTION
 .B aptly\-publisher
 allows one to create aptly multi-component publishes from JSON definition of
 repositories and mirrors
+
+.SH ACTIONS
+.TP
+.B publish
+will update publishes from repositories and mirrors defined in config
+.TP
+.B promote
+will promote published snapshots of one publish to another
+.TP
+.B cleanup
+will remove unused snapshots
 
 .SH OPTIONS
 .TP
@@ -22,13 +34,24 @@ Path to configuration YAML file
 .TP
 \-d, \-\-debug
 .TP
-\-\-cleanup-snapshots
-Cleanup unused and old snapshots
+\-h, \-\-help
 .TP
 \-\-recreate
 Drop publish and create it again, only way to add new components
 .TP
 \-\-dry, \-\-dry\-run
+.TP
+\-\-url
+URL to Aptly API, eg. http://localhost:8080
+.TP
+\-\-source
+Source publish to take snapshots from (promote action)
+.TP
+\-\-target
+Target publish to update (promote action)
+.TP
+\-\-components
+Space-separated list components to promote (promote action)
 
 .SH BUGS
 .TP

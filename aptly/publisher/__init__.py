@@ -3,7 +3,7 @@
 import time
 import re
 import logging
-from aptly.exceptions import AptlyException
+from aptly.exceptions import AptlyException, NoSuchPublish
 
 lg = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ class Publish(object):
             if publish['distribution'] == self.distribution and \
                     publish['prefix'] == (self.prefix or '.'):
                 return publish
-        return False
+        raise NoSuchPublish("Publish %s/%s does not exist" % ((self.prefix or '.'), self.distribution))
 
     def load(self):
         """
