@@ -87,7 +87,7 @@ def action_promote(client, source, target, components=None, recreate=False):
     else:
         for component in components:
             try:
-                publish_target.components[component] = copy.deepcopy(publish_source.component[component])
+                publish_target.components[component] = copy.deepcopy(publish_source.components[component])
             except KeyError:
                 lg.error("Component %s does not exist")
                 sys.exit(1)

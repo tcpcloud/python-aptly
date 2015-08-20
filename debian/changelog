@@ -1,3 +1,9 @@
+python-aptly (0.4.6) trusty; urgency=medium
+
+  * fix publishing selected components
+
+ -- Filip Pytloun <filip@pytloun.cz>  Thu, 20 Aug 2015 18:16:58 +0200
+
 python-aptly (0.4.5) trusty; urgency=medium
 
   * ensure there are no collisions between merged snapshots and normal
