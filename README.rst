@@ -14,6 +14,17 @@ It takes configuration in yaml format which defines what to publish and how.
 
 Publisher expects snapshots in format ``<name>-<timestamp>``.
 
+Features
+--------
+
+- create publish from latest snapshots
+- promote publish
+
+  - use it's snapshots to create or update another publish (eg. testing ->
+    stable)
+
+- cleanup unused snapshots
+
 Example configuration
 ---------------------
 
@@ -42,6 +53,24 @@ Configuration above will create two publishes:
   main-`<timestamp>` by merging snapshots aptly-`<timestamp>` and
   trusty-main-`<timestamp>` snapshots)
 - ``nightly/trusty`` with component cloudlab
+
+Build
+=====
+
+You can install directly using ``setup.py`` or build Debian package with eg.:
+
+::
+
+  dpkg-buildpackage -uc -us
+
+Read more
+=========
+
+For more informations, see ``aptly-publisher --help`` or man page.
+
+::
+
+  man man/aptly-publisher.1
 
 Known issues
 ============
