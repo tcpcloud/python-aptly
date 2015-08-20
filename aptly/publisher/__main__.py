@@ -26,13 +26,18 @@ def get_latest_snapshot(snapshots, name):
 
 def main():
     parser = argparse.ArgumentParser("Aptly publisher")
-    parser.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
-    parser.add_argument('-v', '--verbose', action="store_true")
-    parser.add_argument('-d', '--debug', action="store_true")
-    parser.add_argument('--cleanup-snapshots', action="store_true", help="Cleanup unused and old snapshots")
-    parser.add_argument('--recreate', action="store_true", help="Drop publish and create it again, only way to add new components")
-    parser.add_argument('--dry', '--dry-run', action="store_true")
-    parser.add_argument('url', help="URL to Aptly API, eg. http://localhost:8080")
+
+    group_common = parser.add_argument_group("Common")
+    parser.add_argument('action', help="Action to perform (publish, promote, cleanup)")
+    group_common.add_argument('-v', '--verbose', action="store_true")
+    group_common.add_argument('-d', '--debug', action="store_true")
+    group_common.add_argument('--dry', '--dry-run', action="store_true")
+    group_common.add_argument('--url', required=True, help="URL to Aptly API, eg. http://localhost:8080")
+
+    group_publish = parser.add_argument_group("Action 'publish'")
+    group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
+    group_publish.add_argument('--recreate', action="store_true", help="Drop publish and create it again, only way to add new components")
+
     args = parser.parse_args()
 
     if args.verbose:
@@ -41,17 +46,20 @@ def main():
     if args.debug:
         lg_root.setLevel(logging.DEBUG)
 
-    config = load_config(args.config)
-
     client = Aptly(args.url, dry=args.dry)
     publishmgr = PublishManager(client)
 
-    if args.cleanup_snapshots:
+    if args.action == 'publish':
+        action_publish(client, publishmgr, config_file=args.config, recreate=args.recreate)
+    elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
         sys.exit(0)
 
+
+def action_publish(client, publishmgr, config_file, recreate=False):
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
 
+    config = load_config(config_file)
     for name, repo in config.get('mirror', {}).iteritems():
         snapshot = get_latest_snapshot(snapshots, name)
         if not snapshot:
@@ -73,7 +81,7 @@ def main():
             snapshot=snapshot
         )
 
-    publishmgr.do_publish(recreate=args.recreate)
+    publishmgr.do_publish(recreate=recreate)
 
 
 if __name__ == '__main__':
