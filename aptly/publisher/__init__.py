@@ -131,7 +131,7 @@ class Publish(object):
 
             snapshot_remote = self._find_snapshot(snapshot)
             for source in self._get_source_snapshots(snapshot_remote, fallback_self=True):
-                self.add(source['Name'], component)
+                self.add(source, component)
 
     def add(self, snapshot, component='main'):
         """
@@ -149,7 +149,7 @@ class Publish(object):
         remote_snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
         for remote in reversed(remote_snapshots):
             if remote["Name"] == name or \
-                    re.match(remote["Name"], name):
+                    re.match(name, remote["Name"]):
                 return remote
         return None
 
@@ -184,7 +184,7 @@ class Publish(object):
                 continue
 
             # Look if merged snapshot doesn't already exist
-            remote_snapshot = self._find_snapshot(r'^%s-.*' % component)
+            remote_snapshot = self._find_snapshot(r'^%s-\d+' % component)
             source_snapshots = self._get_source_snapshots(remote_snapshot)
 
             # Check if latest merged snapshot has same source snapshots like us

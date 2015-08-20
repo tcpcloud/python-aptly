@@ -1,3 +1,9 @@
+python-aptly (0.4.4) trusty; urgency=medium
+
+  * fix more bugs
+
+ -- Filip Pytloun <filip@pytloun.cz>  Thu, 20 Aug 2015 17:54:56 +0200
+
 python-aptly (0.4.3) trusty; urgency=medium
 
   * fix overleft parameter
