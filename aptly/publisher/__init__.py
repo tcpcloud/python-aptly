@@ -27,10 +27,10 @@ class PublishManager(object):
             self._publishes[distribution] = Publish(self.client, distribution, timestamp=self.timestamp)
             return self._publishes[distribution]
 
-    def add(self, name, snapshot, distributions, component='main'):
+    def add(self, snapshot, distributions, component='main'):
         """ Add mirror or repo to publish """
         for dist in distributions:
-            self.publish(dist).add(name, snapshot, component)
+            self.publish(dist).add(snapshot, component)
 
     def do_publish(self, *args, **kwargs):
         for publish in self._publishes.itervalues():
@@ -82,7 +82,7 @@ class Publish(object):
     """
     Single publish object
     """
-    def __init__(self, client, distribution, timestamp=None, recreate=False):
+    def __init__(self, client, distribution, timestamp=None, recreate=False, load=False):
         self.client = client
         self.recreate = recreate
 
@@ -101,7 +101,39 @@ class Publish(object):
         self.components = {}
         self.publish_snapshots = []
 
-    def add(self, name, snapshot, component='main'):
+        if load:
+            # Load information from remote immediately
+            self.load()
+
+    def _get_publish(self):
+        """
+        Find this publish on remote
+        """
+        publishes = self.client.do_get('/publish')
+        for publish in publishes:
+            if publish['distribution'] == self.distribution and \
+                    publish['prefix'] == (self.prefix or '.'):
+                return publish
+        return False
+
+    def load(self):
+        """
+        Load publish info from remote
+        """
+        publish = self._get_publish()
+        for source in publish['sources']:
+            component = source['Component']
+            snapshot = source['Name']
+            self.publish_snapshots.append({
+                'Component': component,
+                'Name': snapshot
+            })
+
+            snapshot_remote = self._find_snapshot(snapshot)
+            for source in self._get_source_snapshots(snapshot_remote, fallback_self=True):
+                self.add(source, component)
+
+    def add(self, snapshot, component='main'):
         """
         Add snapshot of component to publish
         """
@@ -109,6 +141,33 @@ class Publish(object):
             self.components[component].append(snapshot)
         except KeyError:
             self.components[component] = [snapshot]
+
+    def _find_snapshot(self, name):
+        """
+        Find snapshot on remote by name or regular expression
+        """
+        remote_snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
+        for remote in reversed(remote_snapshots):
+            if remote["Name"] == name or \
+                    re.match(remote["Name"], name):
+                return remote
+        return None
+
+    def _get_source_snapshots(self, snapshot, fallback_self=False):
+        """
+        Get list of source snapshots of given snapshot
+
+        TODO: we have to decide by description at the moment
+        """
+        if not snapshot:
+            return []
+
+        source_snapshots = re.findall(r"'([\w\d-]+)'", snapshot['Description'])
+        if not source_snapshots and fallback_self:
+            source_snapshots = [snapshot]
+
+        source_snapshots.sort()
+        return source_snapshots
 
     def merge_snapshots(self):
         """
@@ -125,22 +184,12 @@ class Publish(object):
                 continue
 
             # Look if merged snapshot doesn't already exist
-            remote_snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
-            remote_snapshot = None
-            for remote in reversed(remote_snapshots):
-                if remote['Name'].startswith('%s-' % component):
-                    remote_snapshot = remote
-                    break
+            remote_snapshot = self._find_snapshot(r'^%s-.*' % component)
+            source_snapshots = self._get_source_snapshots(remote_snapshot)
 
             # Check if latest merged snapshot has same source snapshots like us
-            # Unfortunately we have to decide by description
-            if remote_snapshot:
-                source_snapshots = re.findall(r"'([\w\d-]+)'", remote_snapshot['Description'])
-            else:
-                source_snapshots = []
             snapshots_want = list(snapshots)
             snapshots_want.sort()
-            source_snapshots.sort()
 
             if snapshots_want == source_snapshots:
                 lg.info("Remote merge snapshot already exists: %s (%s)" % (remote_snapshot['Name'], source_snapshots))

@@ -68,7 +68,6 @@ def main():
         if not snapshot:
             continue
         publishmgr.add(
-            name,
             component=repo.get('component', 'main'),
             distributions=repo['distributions'],
             snapshot=snapshot
