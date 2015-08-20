@@ -103,7 +103,6 @@ def action_publish(client, publishmgr, config_file, recreate=False):
         if not snapshot:
             continue
         publishmgr.add(
-            name,
             component=repo.get('component', 'main'),
             distributions=repo['distributions'],
             snapshot=snapshot
