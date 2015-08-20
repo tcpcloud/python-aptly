@@ -82,7 +82,7 @@ class Publish(object):
     """
     Single publish object
     """
-    def __init__(self, client, distribution, timestamp=None, recreate=False, load=False):
+    def __init__(self, client, distribution, timestamp=None, recreate=False, load=False, merge_prefix='_'):
         self.client = client
         self.recreate = recreate
 
@@ -98,6 +98,7 @@ class Publish(object):
         else:
             self.timestamp = timestamp
 
+        self.merge_prefix = merge_prefix
         self.components = {}
         self.publish_snapshots = []
 
@@ -184,7 +185,7 @@ class Publish(object):
                 continue
 
             # Look if merged snapshot doesn't already exist
-            remote_snapshot = self._find_snapshot(r'^%s-\d+' % component)
+            remote_snapshot = self._find_snapshot(r'^%s%s-\d+' % (self.merge_prefix, component))
             source_snapshots = self._get_source_snapshots(remote_snapshot)
 
             # Check if latest merged snapshot has same source snapshots like us
@@ -199,7 +200,7 @@ class Publish(object):
                 })
                 continue
 
-            snapshot_name = '%s-%s' % (component, self.timestamp)
+            snapshot_name = '%s%s-%s' % (self.merge_prefix, component, self.timestamp)
             lg.info("Creating merge snapshot %s for component %s of snapshots %s" % (snapshot_name, component, snapshots))
             package_refs = []
             for snapshot in snapshots:
