@@ -12,7 +12,7 @@ workflows.
 
 This is how workflow can look like and what publisher can do for you:
 
-.. image:: ./aptly-publisher.png
+.. image:: ./doc/aptly-publisher.png
     :align: center
 
 Features
@@ -150,6 +150,11 @@ You can see differencies between publishes with following command:
   aptly-publisher -v --url http://localhost:8080  \
   --source nightly/trusty --target testing/trusty \
   publish --diff
+
+Example output can look like this:
+
+.. image:: ./doc/publisher_diff_example.png
+    :align: center
 
 Cleanup unused snapshots
 ~~~~~~~~~~~~~~~~~~~~~~~~

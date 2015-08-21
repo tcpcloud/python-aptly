@@ -126,8 +126,8 @@ def action_diff(source, target, components=[], packages=True):
         published_source = [i for i in source.publish_snapshots if i['Component'] == component][0]['Name']
         published_target = [i for i in target.publish_snapshots if i['Component'] == component][0]['Name']
 
-        print "\033[1;33m== %s \033[30m(%s -> %s)\033[m" % (component, published_target, published_source)
-        print "\033[0;35m=== Snapshots:\033[m"
+        print "\033[1;33m== %s \033[1;30m(%s -> %s)\033[m" % (component, published_target, published_source)
+        print "\033[1;35m=== Snapshots:\033[m"
         for snapshot in snapshots:
             print "    - %s" % snapshot
 
@@ -150,7 +150,7 @@ def action_diff(source, target, components=[], packages=True):
                 else:
                     old = pkg['Right']
 
-                print '    - %s \033[30m(%s -> %s)\033[m' % (pkg_name, old, new)
+                print '    - %s \033[1;30m(%s -> %s)\033[m' % (pkg_name, old, new)
 
         print
 
