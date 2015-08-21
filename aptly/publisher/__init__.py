@@ -269,7 +269,7 @@ class Publish(object):
             })
 
     def drop_publish(self):
-        lg.info("Deleting publish, distribution=%s/%s" % self.name)
+        lg.info("Deleting publish, distribution=%s" % self.name)
 
         self.client.do_delete('/publish/%s/%s' % (self.prefix, self.distribution))
 
