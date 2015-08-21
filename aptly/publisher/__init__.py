@@ -93,6 +93,8 @@ class Publish(object):
         else:
             self.prefix = ''
 
+        self.name = '%s/%s' % (self.prefix or '.', self.distribution)
+
         if not timestamp:
             self.timestamp = int(time.time())
         else:
@@ -106,6 +108,49 @@ class Publish(object):
             # Load information from remote immediately
             self.load()
 
+    def __eq__(self, other):
+        if not isinstance(other, Publish):
+            return False
+
+        diff, equal = self.compare(other)
+        if not diff:
+            return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def compare(self, other, components=[]):
+        """
+        Compare two publishes
+        It expects that other publish is same or older than this one
+
+        Return tuple (diff, equal) of dict {'component': ['snapshot']}
+        """
+        lg.debug("Comparing publish %s and %s" % (self.name, other.name))
+
+        diff, equal = ({}, {})
+
+        for component, snapshots in self.components.iteritems():
+            if component not in other.components:
+                continue
+
+            if component not in other.components.keys():
+                # Component is missing in other
+                diff[component] = snapshots
+                continue
+
+            equal_snapshots = list(set(snapshots).intersection(other.components[component]))
+            if equal_snapshots:
+                lg.debug("Equal snapshots for %s: %s" % (component, equal_snapshots))
+                equal[component] = equal_snapshots
+
+            diff_snapshots = list(set(snapshots).difference(other.components[component]))
+            if diff_snapshots:
+                lg.debug("Different snapshots for %s: %s" % (component, diff_snapshots))
+                diff[component] = diff_snapshots
+
+        return (diff, equal)
+
     def _get_publish(self):
         """
         Find this publish on remote
@@ -115,7 +160,7 @@ class Publish(object):
             if publish['Distribution'] == self.distribution and \
                     publish['Prefix'] == (self.prefix or '.'):
                 return publish
-        raise NoSuchPublish("Publish %s/%s does not exist" % ((self.prefix or '.'), self.distribution))
+        raise NoSuchPublish("Publish %s does not exist" % self.name)
 
     def load(self):
         """
@@ -224,15 +269,13 @@ class Publish(object):
             })
 
     def drop_publish(self):
-        lg.info("Deleting publish, distribution=%s/%s" %
-                (self.prefix or '.', self.distribution))
+        lg.info("Deleting publish, distribution=%s/%s" % self.name)
 
         self.client.do_delete('/publish/%s/%s' % (self.prefix, self.distribution))
 
     def update_publish(self):
-        lg.info("Updating publish, distribution=%s/%s snapshots=%s" %
-                (self.prefix or '.', self.distribution,
-                 self.publish_snapshots))
+        lg.info("Updating publish, distribution=%s snapshots=%s" %
+                (self.name, self.publish_snapshots))
 
         self.client.do_put(
             '/publish/%s/%s' % (self.prefix, self.distribution),
@@ -240,9 +283,8 @@ class Publish(object):
         )
 
     def create_publish(self):
-        lg.info("Creating new publish, distribution=%s/%s snapshots=%s" %
-                (self.prefix or '.', self.distribution,
-                 self.publish_snapshots))
+        lg.info("Creating new publish, distribution=%s snapshots=%s" %
+                (self.name, self.publish_snapshots))
 
         if self.prefix:
             prefix = '/%s' % self.prefix
@@ -288,10 +330,10 @@ class Publish(object):
             published.sort()
 
             if to_publish == published:
-                lg.info("Publish %s/%s is up to date" % (self.prefix or '.', self.distribution))
+                lg.info("Publish %s is up to date" % self.name)
             else:
                 if recreate:
-                    lg.info("Recreating publish %s/%s" % (self.prefix or '.', self.distribution))
+                    lg.info("Recreating publish %s" % self.name)
                     self.drop_publish()
                     self.create_publish()
                 else:

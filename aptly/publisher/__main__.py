@@ -13,7 +13,7 @@ import re
 
 logging.basicConfig()
 lg_root = logging.getLogger('aptly')
-lg = logging.getLogger(__name__)
+lg = logging.getLogger('aptly-publisher')
 
 
 def load_config(config):
@@ -45,6 +45,7 @@ def main():
     group_promote.add_argument('--source', help="Source publish to take snapshots from")
     group_promote.add_argument('--target', help="Target publish to update")
     group_promote.add_argument('--components', nargs='+', help="Space-separated list of components to promote")
+    group_promote.add_argument('--diff', action="store_true", help="Show differences between publishes (snapshots to be updated)")
 
     args = parser.parse_args()
 
@@ -62,13 +63,16 @@ def main():
     elif args.action == 'promote':
         if not args.source or not args.target:
             parser.error("Action 'promote' requires both --source and --target arguments")
-        action_promote(client, source=args.source, target=args.target, components=args.components, recreate=args.recreate)
+        action_promote(client, source=args.source, target=args.target,
+                       components=args.components, recreate=args.recreate,
+                       diff=args.diff)
     elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
         sys.exit(0)
 
 
-def action_promote(client, source, target, components=None, recreate=False):
+def action_promote(client, source, target, components=None, recreate=False,
+                   diff=False):
     try:
         publish_source = Publish(client, source, load=True)
     except NoSuchPublish as e:
@@ -79,19 +83,64 @@ def action_promote(client, source, target, components=None, recreate=False):
     try:
         publish_target.load()
     except NoSuchPublish:
+        if diff:
+            lg.error("Target publish %s does not exist" % target)
+            sys.exit(1)
         # Target doesn't have to exist, it will be created
         pass
 
-    if not components:
-        publish_target.components = copy.deepcopy(publish_source.components)
+    if diff:
+        action_diff(source=publish_source, target=publish_target, components=components)
     else:
-        for component in components:
-            try:
-                publish_target.components[component] = copy.deepcopy(publish_source.components[component])
-            except KeyError:
-                lg.error("Component %s does not exist")
-                sys.exit(1)
-    publish_target.do_publish(recreate=recreate)
+        if not components:
+            publish_target.components = copy.deepcopy(publish_source.components)
+        else:
+            for component in components:
+                try:
+                    publish_target.components[component] = copy.deepcopy(publish_source.components[component])
+                except KeyError:
+                    lg.error("Component %s does not exist")
+                    sys.exit(1)
+
+        if publish_source == publish_target:
+            lg.warn("Target is up to date with source publish")
+            if not recreate:
+                lg.warn("There is nothing to do")
+                sys.exit(0)
+            else:
+                lg.warn("Recreating publish on your command")
+        publish_target.do_publish(recreate=recreate)
+
+
+def action_diff(source, target, components=[], packages=True):
+    diff, equal = source.compare(target, components=components)
+    if not diff:
+        print "Target is up to date with source publish"
+        return
+
+    print "\033[1;36m= Differencies per component\033[1;m"
+    for component, snapshots in diff.iteritems():
+        if not snapshots:
+            continue
+
+        published_source = [i for i in source.publish_snapshots if i['Component'] == component][0]['Name']
+        published_target = [i for i in target.publish_snapshots if i['Component'] == component][0]['Name']
+
+        print "\033[1;33m== %s \033[1;30m(%s -> %s)\033[1;m" % (component, published_target, published_source)
+        print "\033[1;35m=== Snapshots:\033[1;m"
+        for snapshot in snapshots:
+            print "    - %s" % snapshot
+
+        if packages:
+            print "\033[1;35m=== Packages:\033[1;m"
+            diff_packages = source.client.do_get('/snapshots/%s/diff/%s' % (published_source, published_target))
+            if not diff_packages:
+                print "\033[1;31m    - Snapshots contain same packages\033[1;m"
+
+            for pkg in diff_packages:
+                print '%s \033[1;30m(%s)\033[1;m' % (pkg['Left'], pkg['Right'])
+
+        print
 
 
 def action_publish(client, publishmgr, config_file, recreate=False):

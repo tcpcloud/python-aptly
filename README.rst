@@ -140,6 +140,17 @@ repository), you may need to release them faster.
   --source nightly/trusty --target testing/trusty \
   --components cloudlab security -- publish
 
+Show differencies between publishes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can see differencies between publishes with following command:
+
+::
+
+  aptly-publisher -v --url http://localhost:8080  \
+  --source nightly/trusty --target testing/trusty \
+  publish --diff
+
 Cleanup unused snapshots
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -150,17 +161,6 @@ publish is updated (eg. nightly).
 ::
 
   aptly-publisher -v --url http://localhost:8080 cleanup
-
-TODO
-----
-
-There are still things left to do.
-
-- action to show differences between publishes
-
-  - to see which snapshots are going to be promoted
-  - ..and which packages with them
-  - it would be also nice to be able to see changelog of such packages
 
 Installation
 ============
