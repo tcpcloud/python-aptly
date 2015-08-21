@@ -118,7 +118,7 @@ def action_diff(source, target, components=[], packages=True):
         print "Target is up to date with source publish"
         return
 
-    print "\033[1;36m= Differencies per component\033[1;m"
+    print "\033[1;36m= Differencies per component\033[m"
     for component, snapshots in diff.iteritems():
         if not snapshots:
             continue
@@ -126,19 +126,31 @@ def action_diff(source, target, components=[], packages=True):
         published_source = [i for i in source.publish_snapshots if i['Component'] == component][0]['Name']
         published_target = [i for i in target.publish_snapshots if i['Component'] == component][0]['Name']
 
-        print "\033[1;33m== %s \033[1;30m(%s -> %s)\033[1;m" % (component, published_target, published_source)
-        print "\033[1;35m=== Snapshots:\033[1;m"
+        print "\033[1;33m== %s \033[30m(%s -> %s)\033[m" % (component, published_target, published_source)
+        print "\033[0;35m=== Snapshots:\033[m"
         for snapshot in snapshots:
             print "    - %s" % snapshot
 
         if packages:
-            print "\033[1;35m=== Packages:\033[1;m"
+            print "\033[1;35m=== Packages:\033[m"
             diff_packages = source.client.do_get('/snapshots/%s/diff/%s' % (published_source, published_target))
             if not diff_packages:
-                print "\033[1;31m    - Snapshots contain same packages\033[1;m"
+                print "\033[1;31m    - Snapshots contain same packages\033[m"
 
             for pkg in diff_packages:
-                print '%s \033[1;30m(%s)\033[1;m' % (pkg['Left'], pkg['Right'])
+                pkg_name = re.match('.*\ (.*)\ .*\ .*', pkg['Left']).group(1)
+
+                if pkg['Left']:
+                    new = re.match('.*\ .*\ (.*)\ .*', pkg['Left']).group(1)
+                else:
+                    new = pkg['Left']
+
+                if pkg['Right']:
+                    old = re.match('.*\ .*\ (.*)\ .*', pkg['Right']).group(1)
+                else:
+                    old = pkg['Right']
+
+                print '    - %s \033[30m(%s -> %s)\033[m' % (pkg_name, old, new)
 
         print
 
