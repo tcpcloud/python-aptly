@@ -138,7 +138,13 @@ def action_diff(source, target, components=[], packages=True):
                 print "\033[1;31m    - Snapshots contain same packages\033[m"
 
             for pkg in diff_packages:
-                pkg_name = re.match('.*\ (.*)\ .*\ .*', pkg['Left']).group(1)
+                if not pkg['Left']:
+                    # Parse pkg name from target if not in source
+                    # This should not happen and is mostly caused by this bug:
+                    # https://github.com/smira/aptly/issues/287
+                    pkg_name = re.match('.*\ (.*)\ .*\ .*', pkg['Right']).group(1)
+                else:
+                    pkg_name = re.match('.*\ (.*)\ .*\ .*', pkg['Left']).group(1)
 
                 if pkg['Left']:
                     new = re.match('.*\ .*\ (.*)\ .*', pkg['Left']).group(1)
