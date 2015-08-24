@@ -92,6 +92,15 @@ def action_promote(client, source, target, components=None, recreate=False,
     if diff:
         action_diff(source=publish_source, target=publish_target, components=components)
     else:
+        diffs, equals = publish_source.compare(publish_target, components=components)
+        if not diffs:
+            lg.warn("Target is up to date with source publish")
+            if not recreate:
+                lg.warn("There is nothing to do")
+                sys.exit(0)
+            else:
+                lg.warn("Recreating publish on your command")
+
         if not components:
             publish_target.components = copy.deepcopy(publish_source.components)
         else:
@@ -102,13 +111,6 @@ def action_promote(client, source, target, components=None, recreate=False,
                     lg.error("Component %s does not exist")
                     sys.exit(1)
 
-        if publish_source == publish_target:
-            lg.warn("Target is up to date with source publish")
-            if not recreate:
-                lg.warn("There is nothing to do")
-                sys.exit(0)
-            else:
-                lg.warn("Recreating publish on your command")
         publish_target.do_publish(recreate=recreate)
 
 

@@ -1,3 +1,10 @@
+python-aptly (0.5.3) trusty; urgency=medium
+
+  * Fix check if publishes are the same
+  * Fix determining package name for diff if it's not on source side
+
+ -- Filip Pytloun <filip@pytloun.cz>  Mon, 24 Aug 2015 14:04:12 +0200
+
 python-aptly (0.5.2) trusty; urgency=medium
 
   * fix typo
