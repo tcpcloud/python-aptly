@@ -1,3 +1,9 @@
+python-aptly (0.5.4) trusty; urgency=medium
+
+  * Raise default timeout
+
+ -- Filip Pytloun <filip@pytloun.cz>  Wed, 07 Oct 2015 22:16:03 +0200
+
 python-aptly (0.5.3) trusty; urgency=medium
 
   * Fix check if publishes are the same
