@@ -9,7 +9,7 @@ lg = logging.getLogger(__name__)
 
 
 class Aptly(object):
-    def __init__(self, url, auth=None, timeout=60, dry=False):
+    def __init__(self, url, auth=None, timeout=300, dry=False):
         self.url = '%s%s' % (url, '/api')
         self.timeout = timeout
         self.dry = dry
