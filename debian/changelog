@@ -1,3 +1,9 @@
+python-aptly (0.6) trusty; urgency=medium
+
+  * support for publishing only selected packages
+
+ -- Filip Pytloun <filip@pytloun.cz>  Thu, 15 Oct 2015 17:29:05 +0200
+
 python-aptly (0.5.4) trusty; urgency=medium
 
   * Raise default timeout

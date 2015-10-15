@@ -140,6 +140,14 @@ repository), you may need to release them faster.
   --source nightly/trusty --target testing/trusty \
   --components cloudlab security -- publish
 
+Finally you are also able to promote selected packages, eg.
+
+::
+
+  aptly-publisher -v --url http://localhost:8080  \
+  --source nightly/trusty --target testing/trusty \
+  --packages python-aptly aptly -- publish
+
 Show differencies between publishes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -179,6 +179,39 @@ class Publish(object):
             for source in self._get_source_snapshots(snapshot_remote, fallback_self=True):
                 self.add(source, component)
 
+    def get_packages(self, component=None, components=[], packages=None):
+        """
+        Return package refs for given components
+        """
+        if component:
+            components = [component]
+
+        package_refs = []
+        for snapshot in self.publish_snapshots:
+            if component and snapshot['Component'] not in components:
+                # We don't want packages for this component
+                continue
+
+            component_refs = self.client.do_get('/snapshots/%s/packages' % snapshot['Name'])
+            if packages:
+                # Filter package names
+                for ref in component_refs:
+                    if self.parse_package_ref(ref)[1] in packages:
+                        package_refs.append(ref)
+            else:
+                package_refs.extend(component_refs)
+
+        return package_refs
+
+    def parse_package_ref(self, ref):
+        """
+        Return tuple of architecture, package_name, version, id
+        """
+        if not ref:
+            return None
+        parsed = re.match('(.*)\ (.*)\ (.*)\ (.*)', ref)
+        return parsed.groups()
+
     def add(self, snapshot, component='main'):
         """
         Add snapshot of component to publish

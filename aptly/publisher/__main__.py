@@ -45,6 +45,7 @@ def main():
     group_promote.add_argument('--source', help="Source publish to take snapshots from")
     group_promote.add_argument('--target', help="Target publish to update")
     group_promote.add_argument('--components', nargs='+', help="Space-separated list of components to promote")
+    group_promote.add_argument('--packages', nargs='+', help="Space-separated list of packages to promote")
     group_promote.add_argument('--diff', action="store_true", help="Show differences between publishes (snapshots to be updated)")
 
     args = parser.parse_args()
@@ -65,14 +66,14 @@ def main():
             parser.error("Action 'promote' requires both --source and --target arguments")
         action_promote(client, source=args.source, target=args.target,
                        components=args.components, recreate=args.recreate,
-                       diff=args.diff)
+                       packages=args.packages, diff=args.diff)
     elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
         sys.exit(0)
 
 
 def action_promote(client, source, target, components=None, recreate=False,
-                   diff=False):
+                   packages=None, diff=False):
     try:
         publish_source = Publish(client, source, load=True)
     except NoSuchPublish as e:
@@ -90,17 +91,46 @@ def action_promote(client, source, target, components=None, recreate=False,
         pass
 
     if diff:
+        # Only print differences and exit
         action_diff(source=publish_source, target=publish_target, components=components)
-    else:
-        diffs, equals = publish_source.compare(publish_target, components=components)
-        if not diffs:
-            lg.warn("Target is up to date with source publish")
-            if not recreate:
-                lg.warn("There is nothing to do")
-                sys.exit(0)
-            else:
-                lg.warn("Recreating publish on your command")
+        sys.exit(0)
 
+    # Check if target is not already up to date
+    diffs, equals = publish_source.compare(publish_target, components=components)
+    if not diffs:
+        lg.warn("Target is up to date with source publish")
+        if not recreate:
+            lg.warn("There is nothing to do")
+            sys.exit(0)
+        else:
+            lg.warn("Recreating publish on your command")
+
+    if packages:
+        # We are only going to promote specific packages
+        for component, snapshots in publish_source.components.iteritems():
+            if components and component not in components:
+                # We don't want to promote this component
+                continue
+
+            # Get packages to promote
+            package_refs = publish_source.get_packages(component=component, packages=packages)
+            if package_refs:
+                # Create snapshot for selected packages
+                snapshot_name = 'ext_%s-%s' % (component, publish_target.timestamp)
+                lg.debug("Creating snapshot %s for component %s of packages: %s" % (snapshot_name, component, packages))
+                client.do_post(
+                    '/snapshots',
+                    data={
+                        'Name': snapshot_name,
+                        'SourceSnapshots': snapshots,
+                        'Description': "Promoted packages from snapshots %s: %s" % (snapshots, packages),
+                        'PackageRefs': package_refs,
+                    }
+                )
+                publish_target.components[component].append(snapshot_name)
+    else:
+        # Publish whole components
+        # Use source publish components structure for creation of target publish
         if not components:
             publish_target.components = copy.deepcopy(publish_source.components)
         else:
@@ -111,7 +141,7 @@ def action_promote(client, source, target, components=None, recreate=False,
                     lg.error("Component %s does not exist")
                     sys.exit(1)
 
-        publish_target.do_publish(recreate=recreate)
+    publish_target.do_publish(recreate=recreate)
 
 
 def action_diff(source, target, components=[], packages=True):
@@ -140,21 +170,24 @@ def action_diff(source, target, components=[], packages=True):
                 print "\033[1;31m    - Snapshots contain same packages\033[m"
 
             for pkg in diff_packages:
-                if not pkg['Left']:
+                left = source.parse_package_ref(pkg['Left'])
+                right = target.parse_package_ref(pkg['Right'])
+
+                if not left:
                     # Parse pkg name from target if not in source
                     # This should not happen and is mostly caused by this bug:
                     # https://github.com/smira/aptly/issues/287
-                    pkg_name = re.match('.*\ (.*)\ .*\ .*', pkg['Right']).group(1)
+                    pkg_name = right[1]
                 else:
-                    pkg_name = re.match('.*\ (.*)\ .*\ .*', pkg['Left']).group(1)
+                    pkg_name = left[1]
 
-                if pkg['Left']:
-                    new = re.match('.*\ .*\ (.*)\ .*', pkg['Left']).group(1)
+                if left:
+                    new = left[2]
                 else:
                     new = pkg['Left']
 
-                if pkg['Right']:
-                    old = re.match('.*\ .*\ (.*)\ .*', pkg['Right']).group(1)
+                if right:
+                    old = right[2]
                 else:
                     old = pkg['Right']
 
