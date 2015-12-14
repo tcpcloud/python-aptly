@@ -306,16 +306,19 @@ class Publish(object):
 
         self.client.do_delete('/publish/%s/%s' % (self.prefix, self.distribution))
 
-    def update_publish(self):
+    def update_publish(self, force_overwrite=False):
         lg.info("Updating publish, distribution=%s snapshots=%s" %
                 (self.name, self.publish_snapshots))
 
         self.client.do_put(
             '/publish/%s/%s' % (self.prefix, self.distribution),
-            {'Snapshots': self.publish_snapshots}
+            {
+                'Snapshots': self.publish_snapshots,
+                'ForceOverwrite': force_overwrite,
+            }
         )
 
-    def create_publish(self):
+    def create_publish(self, force_overwrite=False):
         lg.info("Creating new publish, distribution=%s snapshots=%s" %
                 (self.name, self.publish_snapshots))
 
@@ -328,6 +331,7 @@ class Publish(object):
                 "SourceKind": "snapshot",
                 "Distribution": self.distribution,
                 "Sources": self.publish_snapshots,
+                "ForceOverwrite": force_overwrite,
             },
         )
 
@@ -347,7 +351,7 @@ class Publish(object):
                 return publish
         return False
 
-    def do_publish(self, recreate=False):
+    def do_publish(self, recreate=False, force_overwrite=False):
         self.merge_snapshots()
         publish = self.get_publish()
 
@@ -368,6 +372,6 @@ class Publish(object):
                 if recreate:
                     lg.info("Recreating publish %s" % self.name)
                     self.drop_publish()
-                    self.create_publish()
+                    self.create_publish(force_overwrite)
                 else:
-                    self.update_publish()
+                    self.update_publish(force_overwrite)

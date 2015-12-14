@@ -1,3 +1,9 @@
+python-aptly (0.7) trusty; urgency=medium
+
+  * pass ForceOverwrite option when publishing
+
+ -- Filip Pytloun <filip@pytloun.cz>  Mon, 14 Dec 2015 15:28:51 +0100
+
 python-aptly (0.6) trusty; urgency=medium
 
   * support for publishing only selected packages

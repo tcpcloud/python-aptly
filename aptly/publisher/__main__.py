@@ -37,6 +37,7 @@ def main():
     group_common.add_argument('--dry', '--dry-run', action="store_true")
     group_common.add_argument('--url', required=True, help="URL to Aptly API, eg. http://localhost:8080")
     group_common.add_argument('--recreate', action="store_true", help="Drop publish and create it again, only way to add new components")
+    group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
 
     group_publish = parser.add_argument_group("Action 'publish'")
     group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
@@ -60,20 +61,23 @@ def main():
     publishmgr = PublishManager(client)
 
     if args.action == 'publish':
-        action_publish(client, publishmgr, config_file=args.config, recreate=args.recreate)
+        action_publish(client, publishmgr, config_file=args.config,
+                       recreate=args.recreate,
+                       force_overwrite=args.force_overwrite)
     elif args.action == 'promote':
         if not args.source or not args.target:
             parser.error("Action 'promote' requires both --source and --target arguments")
         action_promote(client, source=args.source, target=args.target,
                        components=args.components, recreate=args.recreate,
-                       packages=args.packages, diff=args.diff)
+                       packages=args.packages, diff=args.diff,
+                       force_overwrite=args.force_overwrite)
     elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
         sys.exit(0)
 
 
 def action_promote(client, source, target, components=None, recreate=False,
-                   packages=None, diff=False):
+                   packages=None, diff=False, force_overwrite=False):
     try:
         publish_source = Publish(client, source, load=True)
     except NoSuchPublish as e:
@@ -141,7 +145,8 @@ def action_promote(client, source, target, components=None, recreate=False,
                     lg.error("Component %s does not exist")
                     sys.exit(1)
 
-    publish_target.do_publish(recreate=recreate)
+    publish_target.do_publish(recreate=recreate,
+                              force_overwrite=force_overwrite)
 
 
 def action_diff(source, target, components=[], packages=True):
@@ -196,7 +201,8 @@ def action_diff(source, target, components=[], packages=True):
         print
 
 
-def action_publish(client, publishmgr, config_file, recreate=False):
+def action_publish(client, publishmgr, config_file, recreate=False,
+                   force_overwrite=False):
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
 
     config = load_config(config_file)
@@ -220,7 +226,7 @@ def action_publish(client, publishmgr, config_file, recreate=False):
             snapshot=snapshot
         )
 
-    publishmgr.do_publish(recreate=recreate)
+    publishmgr.do_publish(recreate=recreate, force_overwrite=force_overwrite)
 
 
 if __name__ == '__main__':
