@@ -1,3 +1,9 @@
+python-aptly (0.7.1) trusty; urgency=medium
+
+  * pass timeout parameter from publisher
+
+ -- Filip Pytloun <filip@pytloun.cz>  Mon, 08 Feb 2016 11:13:55 +0100
+
 python-aptly (0.7) trusty; urgency=medium
 
   * pass ForceOverwrite option when publishing

@@ -35,6 +35,7 @@ def main():
     group_common.add_argument('-v', '--verbose', action="store_true")
     group_common.add_argument('-d', '--debug', action="store_true")
     group_common.add_argument('--dry', '--dry-run', action="store_true")
+    group_common.add_argument('--timeout', type=int, default=300, help="Aptly client timeout. Raise for larger publishes and slow server.")
     group_common.add_argument('--url', required=True, help="URL to Aptly API, eg. http://localhost:8080")
     group_common.add_argument('--recreate', action="store_true", help="Drop publish and create it again, only way to add new components")
     group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
@@ -57,7 +58,7 @@ def main():
     if args.debug:
         lg_root.setLevel(logging.DEBUG)
 
-    client = Aptly(args.url, dry=args.dry)
+    client = Aptly(args.url, dry=args.dry, timeout=args.timeout)
     publishmgr = PublishManager(client)
 
     if args.action == 'publish':
