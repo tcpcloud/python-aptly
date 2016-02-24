@@ -39,6 +39,7 @@ def main():
     group_common.add_argument('--url', required=True, help="URL to Aptly API, eg. http://localhost:8080")
     group_common.add_argument('--recreate', action="store_true", help="Drop publish and create it again, only way to add new components")
     group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
+    group_common.add_argument('--publish-contents', action="store_true", default=False, help="Publish contents. It's slow so disabled by default to support large repositories.")
 
     group_publish = parser.add_argument_group("Action 'publish'")
     group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
@@ -64,21 +65,24 @@ def main():
     if args.action == 'publish':
         action_publish(client, publishmgr, config_file=args.config,
                        recreate=args.recreate,
-                       force_overwrite=args.force_overwrite)
+                       force_overwrite=args.force_overwrite,
+                       publish_contents=args.publish_contents)
     elif args.action == 'promote':
         if not args.source or not args.target:
             parser.error("Action 'promote' requires both --source and --target arguments")
         action_promote(client, source=args.source, target=args.target,
                        components=args.components, recreate=args.recreate,
                        packages=args.packages, diff=args.diff,
-                       force_overwrite=args.force_overwrite)
+                       force_overwrite=args.force_overwrite,
+                       publish_contents=args.publish_contents)
     elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
         sys.exit(0)
 
 
 def action_promote(client, source, target, components=None, recreate=False,
-                   packages=None, diff=False, force_overwrite=False):
+                   packages=None, diff=False, force_overwrite=False,
+                   publish_contents=False):
     try:
         publish_source = Publish(client, source, load=True)
     except NoSuchPublish as e:
@@ -147,7 +151,8 @@ def action_promote(client, source, target, components=None, recreate=False,
                     sys.exit(1)
 
     publish_target.do_publish(recreate=recreate,
-                              force_overwrite=force_overwrite)
+                              force_overwrite=force_overwrite,
+                              publish_contents=publish_contents)
 
 
 def action_diff(source, target, components=[], packages=True):
@@ -203,7 +208,7 @@ def action_diff(source, target, components=[], packages=True):
 
 
 def action_publish(client, publishmgr, config_file, recreate=False,
-                   force_overwrite=False):
+                   force_overwrite=False, publish_contents=False):
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
 
     config = load_config(config_file)
@@ -227,7 +232,8 @@ def action_publish(client, publishmgr, config_file, recreate=False,
             snapshot=snapshot
         )
 
-    publishmgr.do_publish(recreate=recreate, force_overwrite=force_overwrite)
+    publishmgr.do_publish(recreate=recreate, force_overwrite=force_overwrite,
+                          publish_contents=publish_contents)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,12 @@
+python-aptly (0.7.2) trusty; urgency=medium
+
+  * skip contents generation by default
+  * add --publish-contents option
+  * move man page into doc directory
+  * obtain Aptly API version on client initialization
+
+ -- Filip Pytloun <filip@pytloun.cz>  Wed, 24 Feb 2016 09:45:30 +0100
+
 python-aptly (0.7.1) trusty; urgency=medium
 
   * pass timeout parameter from publisher

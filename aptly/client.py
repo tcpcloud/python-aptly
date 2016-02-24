@@ -21,6 +21,10 @@ class Aptly(object):
             'Accept': 'application/json',
             'Content-type': 'application/json',
         })
+        self.api_version = self.get_version()
+
+    def get_version(self):
+        return self.do_get('/version')["Version"]
 
     def _process_result(self, res):
         if res.status_code < 200 or res.status_code >= 300:

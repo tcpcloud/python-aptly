@@ -306,7 +306,7 @@ class Publish(object):
 
         self.client.do_delete('/publish/%s/%s' % (self.prefix, self.distribution))
 
-    def update_publish(self, force_overwrite=False):
+    def update_publish(self, force_overwrite=False, publish_contents=False):
         lg.info("Updating publish, distribution=%s snapshots=%s" %
                 (self.name, self.publish_snapshots))
 
@@ -315,10 +315,11 @@ class Publish(object):
             {
                 'Snapshots': self.publish_snapshots,
                 'ForceOverwrite': force_overwrite,
+                'SkipContents': not publish_contents,
             }
         )
 
-    def create_publish(self, force_overwrite=False):
+    def create_publish(self, force_overwrite=False, publish_contents=False):
         lg.info("Creating new publish, distribution=%s snapshots=%s" %
                 (self.name, self.publish_snapshots))
 
@@ -332,6 +333,7 @@ class Publish(object):
                 "Distribution": self.distribution,
                 "Sources": self.publish_snapshots,
                 "ForceOverwrite": force_overwrite,
+                'SkipContents': not publish_contents,
             },
         )
 
@@ -351,13 +353,14 @@ class Publish(object):
                 return publish
         return False
 
-    def do_publish(self, recreate=False, force_overwrite=False):
+    def do_publish(self, recreate=False, force_overwrite=False,
+                   publish_contents=False):
         self.merge_snapshots()
         publish = self.get_publish()
 
         if not publish:
             # New publish
-            self.create_publish()
+            self.create_publish(force_overwrite, publish_contents)
         else:
             # Test if publish is up to date
             to_publish = [x['Name'] for x in self.publish_snapshots]
@@ -372,6 +375,6 @@ class Publish(object):
                 if recreate:
                     lg.info("Recreating publish %s" % self.name)
                     self.drop_publish()
-                    self.create_publish(force_overwrite)
+                    self.create_publish(force_overwrite, publish_contents)
                 else:
-                    self.update_publish(force_overwrite)
+                    self.update_publish(force_overwrite, publish_contents)
