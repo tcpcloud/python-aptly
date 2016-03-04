@@ -1,3 +1,9 @@
+python-aptly (0.7.3) trusty; urgency=medium
+
+  * add examples
+
+ -- Filip Pytloun <filip@pytloun.cz>  Fri, 04 Mar 2016 21:22:10 +0100
+
 python-aptly (0.7.2) trusty; urgency=medium
 
   * skip contents generation by default

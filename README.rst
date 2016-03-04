@@ -201,6 +201,10 @@ For usage informations, see ``aptly-publisher --help`` or man page.
 
   man man/aptly-publisher.1
 
+Also see ``doc/examples`` directory.
+
+For examples of jenkins jobs, have a look at `tcpcloud/jenkins-jobs <https://github.com/tcpcloud/jenkins-jobs>`_ repository.
+
 Known issues
 ============
 

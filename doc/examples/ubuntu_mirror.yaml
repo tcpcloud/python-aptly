@@ -1,0 +1,54 @@
+mirror:
+  # Main repository
+  ubuntu-trusty-main:
+    component: main
+    distributions:
+      - trusty
+  ubuntu-trusty-universe:
+    component: universe
+    distributions:
+      - trusty
+  ubuntu-trusty-multiverse:
+    component: multiverse
+    distributions:
+      - trusty
+  ubuntu-trusty-restricted:
+    component: restricted
+    distributions:
+      - trusty
+
+  # Updates
+  ubuntu-trusty-updates-main:
+    component: main
+    distributions:
+      - trusty-updates
+  ubuntu-trusty-updates-universe:
+    component: universe
+    distributions:
+      - trusty-updates
+  ubuntu-trusty-updates-multiverse:
+    component: multiverse
+    distributions:
+      - trusty-updates
+  ubuntu-trusty-updates-restricted:
+    component: restricted
+    distributions:
+      - trusty-updates
+
+  # Security
+  ubuntu-trusty-security-main:
+    component: main
+    distributions:
+      - trusty-security
+  ubuntu-trusty-security-universe:
+    component: universe
+    distributions:
+      - trusty-security
+  ubuntu-trusty-security-multiverse:
+    component: multiverse
+    distributions:
+      - trusty-security
+  ubuntu-trusty-security-restricted:
+    component: restricted
+    distributions:
+      - trusty-security
