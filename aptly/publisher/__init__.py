@@ -252,6 +252,7 @@ class Publish(object):
         """
         Create component snapshots by merging other snapshots of same component
         """
+        self.publish_snapshots = []
         for component, snapshots in self.components.iteritems():
             if len(snapshots) <= 1:
                 # Only one snapshot, no need to merge

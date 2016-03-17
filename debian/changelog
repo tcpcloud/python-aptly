@@ -1,3 +1,9 @@
+python-aptly (0.7.4) trusty; urgency=medium
+
+  * Fix critical bug creating invalid publish call
+
+ -- Filip Pytloun <filip@pytloun.cz>  Thu, 17 Mar 2016 17:49:26 +0100
+
 python-aptly (0.7.3) trusty; urgency=medium
 
   * add examples
