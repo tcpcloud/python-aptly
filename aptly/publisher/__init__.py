@@ -279,7 +279,7 @@ class Publish(object):
                 })
                 continue
 
-            snapshot_name = '%s%s-%s' % (self.merge_prefix, component, self.timestamp)
+            snapshot_name = '%s%s-%s-%s' % (self.merge_prefix, self.name.replace('./', '').replace('/', '-'), component, self.timestamp)
             lg.info("Creating merge snapshot %s for component %s of snapshots %s" % (snapshot_name, component, snapshots))
             package_refs = []
             for snapshot in snapshots:

@@ -1,3 +1,10 @@
+python-aptly (0.7.5) trusty; urgency=medium
+
+  * change merged snapshot naming to allow multiple publishes with same
+    component names
+
+ -- Filip Pytloun <filip@pytloun.cz>  Mon, 13 Jun 2016 18:22:01 +0200
+
 python-aptly (0.7.4) trusty; urgency=medium
 
   * Fix critical bug creating invalid publish call
