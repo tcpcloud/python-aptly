@@ -43,6 +43,7 @@ def main():
 
     group_publish = parser.add_argument_group("Action 'publish'")
     group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
+    group_publish.add_argument('--distributions', '--dists', nargs='+', help="Space-separated list of distribution to work with (including prefix), default all.")
 
     group_promote = parser.add_argument_group("Action 'promote'")
     group_promote.add_argument('--source', help="Source publish to take snapshots from")
@@ -66,7 +67,8 @@ def main():
         action_publish(client, publishmgr, config_file=args.config,
                        recreate=args.recreate,
                        force_overwrite=args.force_overwrite,
-                       publish_contents=args.publish_contents)
+                       publish_contents=args.publish_contents,
+                       publish_names=args.dists)
     elif args.action == 'promote':
         if not args.source or not args.target:
             parser.error("Action 'promote' requires both --source and --target arguments")
@@ -208,7 +210,8 @@ def action_diff(source, target, components=[], packages=True):
 
 
 def action_publish(client, publishmgr, config_file, recreate=False,
-                   force_overwrite=False, publish_contents=False):
+                   force_overwrite=False, publish_contents=False,
+                   publish_names=None):
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
 
     config = load_config(config_file)
@@ -233,7 +236,8 @@ def action_publish(client, publishmgr, config_file, recreate=False,
         )
 
     publishmgr.do_publish(recreate=recreate, force_overwrite=force_overwrite,
-                          publish_contents=publish_contents)
+                          publish_contents=publish_contents,
+                          names=publish_names)
 
 
 if __name__ == '__main__':

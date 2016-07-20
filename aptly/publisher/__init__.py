@@ -32,9 +32,33 @@ class PublishManager(object):
         for dist in distributions:
             self.publish(dist).add(snapshot, component)
 
+    def _publish_match(self, publish, names=False):
+        """
+        Check if publish name matches list of names or regex patterns
+        """
+        if names:
+            for name in names:
+                if isinstance(name, re._pattern_type):
+                    if re.match(name, publish.name):
+                        return True
+                else:
+                    if publish in [name, './%s' % name]:
+                        return True
+            return False
+        else:
+            return True
+
     def do_publish(self, *args, **kwargs):
+        try:
+            publish_names = kwargs.pop('names')
+        except KeyError:
+            publish_names = None
+
         for publish in self._publishes.itervalues():
-            publish.do_publish(*args, **kwargs)
+            if self._publish_match(publish.name, publish_names):
+                publish.do_publish(*args, **kwargs)
+            else:
+                lg.info("Skipping publish %s not matching publish names" % publish.name)
 
     def list_uniq(self, seq):
         keys = {}

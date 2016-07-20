@@ -1,3 +1,9 @@
+python-aptly (0.7.6) trusty; urgency=medium
+
+  * Option to filter publish to work on
+
+ -- Filip Pytloun <filip@pytloun.cz>  Wed, 20 Jul 2016 15:18:33 +0200
+
 python-aptly (0.7.5) trusty; urgency=medium
 
   * change merged snapshot naming to allow multiple publishes with same
