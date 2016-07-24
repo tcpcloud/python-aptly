@@ -148,10 +148,10 @@ Finally you are also able to promote selected packages, eg.
   --source nightly/trusty --target testing/trusty \
   --packages python-aptly aptly -- publish
 
-Show differencies between publishes
+Show differences between publishes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can see differencies between publishes with following command:
+You can see differences between publishes with following command:
 
 ::
 
