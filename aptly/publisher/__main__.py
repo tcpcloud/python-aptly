@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import sys
 import argparse
 from aptly.client import Aptly
@@ -160,10 +161,10 @@ def action_promote(client, source, target, components=None, recreate=False,
 def action_diff(source, target, components=[], packages=True):
     diff, equal = source.compare(target, components=components)
     if not diff:
-        print "Target is up to date with source publish"
+        print("Target is up to date with source publish")
         return
 
-    print "\033[1;36m= Differencies per component\033[m"
+    print("\033[1;36m= Differencies per component\033[m")
     for component, snapshots in diff.iteritems():
         if not snapshots:
             continue
@@ -171,16 +172,16 @@ def action_diff(source, target, components=[], packages=True):
         published_source = [i for i in source.publish_snapshots if i['Component'] == component][0]['Name']
         published_target = [i for i in target.publish_snapshots if i['Component'] == component][0]['Name']
 
-        print "\033[1;33m== %s \033[1;30m(%s -> %s)\033[m" % (component, published_target, published_source)
-        print "\033[1;35m=== Snapshots:\033[m"
+        print("\033[1;33m== %s \033[1;30m(%s -> %s)\033[m" % (component, published_target, published_source))
+        print("\033[1;35m=== Snapshots:\033[m")
         for snapshot in snapshots:
-            print "    - %s" % snapshot
+            print("    - %s" % snapshot)
 
         if packages:
-            print "\033[1;35m=== Packages:\033[m"
+            print("\033[1;35m=== Packages:\033[m")
             diff_packages = source.client.do_get('/snapshots/%s/diff/%s' % (published_source, published_target))
             if not diff_packages:
-                print "\033[1;31m    - Snapshots contain same packages\033[m"
+                print("\033[1;31m    - Snapshots contain same packages\033[m")
 
             for pkg in diff_packages:
                 left = source.parse_package_ref(pkg['Left'])
@@ -204,9 +205,9 @@ def action_diff(source, target, components=[], packages=True):
                 else:
                     old = pkg['Right']
 
-                print '    - %s \033[1;30m(%s -> %s)\033[m' % (pkg_name, old, new)
+                print('    - %s \033[1;30m(%s -> %s)\033[m' % (pkg_name, old, new))
 
-        print
+        print()
 
 
 def action_publish(client, publishmgr, config_file, recreate=False,
