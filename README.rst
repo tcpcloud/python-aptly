@@ -195,11 +195,13 @@ Or better build Debian package with eg.:
 Read more
 =========
 
-For usage informations, see ``aptly-publisher --help`` or man page.
+For usage informations, see ``aptly-publisher --help`` or generate and view
+man page.
 
 ::
 
-  man man/aptly-publisher.1
+  PYTHONPATH=. help2man -n "aptly-publisher - tool for easy creation of Aptly multi component publishes" --version-string=$(grep version setup.py|cut -d '"' -f 2) "python aptly/publisher/__main__.py" | sed -e s,__main__.py,aptly-publisher,g -e s,__MAIN__.PY,APTLY-PUBLISHER,g > aptly-publisher.1
+  man aptly-publisher.1
 
 Also see ``doc/examples`` directory.
 
