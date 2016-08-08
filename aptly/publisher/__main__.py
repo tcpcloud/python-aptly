@@ -29,7 +29,7 @@ def get_latest_snapshot(snapshots, name):
 
 
 def main():
-    parser = argparse.ArgumentParser("Aptly publisher")
+    parser = argparse.ArgumentParser("aptly-publisher")
 
     group_common = parser.add_argument_group("Common")
     parser.add_argument('action', help="Action to perform (publish, promote, cleanup)")
