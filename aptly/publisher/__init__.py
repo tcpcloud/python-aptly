@@ -265,7 +265,7 @@ class Publish(object):
         if not snapshot:
             return []
 
-        source_snapshots = re.findall(r"'([\w\d-]+)'", snapshot['Description'])
+        source_snapshots = re.findall(r"'([\w\d\.-]+)'", snapshot['Description'])
         if not source_snapshots and fallback_self:
             source_snapshots = [snapshot['Name']]
 
@@ -288,13 +288,14 @@ class Publish(object):
                 continue
 
             # Look if merged snapshot doesn't already exist
-            remote_snapshot = self._find_snapshot(r'^%s%s-\d+' % (self.merge_prefix, component))
+            remote_snapshot = self._find_snapshot(r'^%s%s-%s-\d+' % (self.merge_prefix, self.name.replace('./', '').replace('/', '-'), component))
             source_snapshots = self._get_source_snapshots(remote_snapshot)
 
             # Check if latest merged snapshot has same source snapshots like us
             snapshots_want = list(snapshots)
             snapshots_want.sort()
 
+            lg.debug("Comparing snapshots: snapshot_name=%s, snapshot_sources=%s, wanted_sources=%s" % (remote_snapshot['Name'], source_snapshots, snapshots_want))
             if snapshots_want == source_snapshots:
                 lg.info("Remote merge snapshot already exists: %s (%s)" % (remote_snapshot['Name'], source_snapshots))
                 self.publish_snapshots.append({
