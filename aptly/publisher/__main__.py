@@ -44,7 +44,7 @@ def main():
 
     group_publish = parser.add_argument_group("Action 'publish'")
     group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
-    group_publish.add_argument('--distributions', '--dists', nargs='+', help="Space-separated list of distribution to work with (including prefix), default all.")
+    group_publish.add_argument('--dists', '--distributions', nargs='+', help="Space-separated list of distribution to work with (including prefix), default all.")
 
     group_promote = parser.add_argument_group("Action 'promote'")
     group_promote.add_argument('--source', help="Source publish to take snapshots from")
