@@ -395,12 +395,11 @@ class Publish(object):
             to_publish.sort()
             published.sort()
 
-            if to_publish == published:
+            if recreate:
+                lg.info("Recreating publish %s" % self.name)
+                self.drop_publish()
+                self.create_publish(force_overwrite, publish_contents)
+            elif to_publish == published:
                 lg.info("Publish %s is up to date" % self.name)
             else:
-                if recreate:
-                    lg.info("Recreating publish %s" % self.name)
-                    self.drop_publish()
-                    self.create_publish(force_overwrite, publish_contents)
-                else:
-                    self.update_publish(force_overwrite, publish_contents)
+                self.update_publish(force_overwrite, publish_contents)
