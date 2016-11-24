@@ -289,20 +289,21 @@ class Publish(object):
 
             # Look if merged snapshot doesn't already exist
             remote_snapshot = self._find_snapshot(r'^%s%s-%s-\d+' % (self.merge_prefix, self.name.replace('./', '').replace('/', '-'), component))
-            source_snapshots = self._get_source_snapshots(remote_snapshot)
+            if remote_snapshot:
+                source_snapshots = self._get_source_snapshots(remote_snapshot)
 
-            # Check if latest merged snapshot has same source snapshots like us
-            snapshots_want = list(snapshots)
-            snapshots_want.sort()
+                # Check if latest merged snapshot has same source snapshots like us
+                snapshots_want = list(snapshots)
+                snapshots_want.sort()
 
-            lg.debug("Comparing snapshots: snapshot_name=%s, snapshot_sources=%s, wanted_sources=%s" % (remote_snapshot['Name'], source_snapshots, snapshots_want))
-            if snapshots_want == source_snapshots:
-                lg.info("Remote merge snapshot already exists: %s (%s)" % (remote_snapshot['Name'], source_snapshots))
-                self.publish_snapshots.append({
-                    'Component': component,
-                    'Name': remote_snapshot['Name']
-                })
-                continue
+                lg.debug("Comparing snapshots: snapshot_name=%s, snapshot_sources=%s, wanted_sources=%s" % (remote_snapshot['Name'], source_snapshots, snapshots_want))
+                if snapshots_want == source_snapshots:
+                    lg.info("Remote merge snapshot already exists: %s (%s)" % (remote_snapshot['Name'], source_snapshots))
+                    self.publish_snapshots.append({
+                        'Component': component,
+                        'Name': remote_snapshot['Name']
+                    })
+                    continue
 
             snapshot_name = '%s%s-%s-%s' % (self.merge_prefix, self.name.replace('./', '').replace('/', '-'), component, self.timestamp)
             lg.info("Creating merge snapshot %s for component %s of snapshots %s" % (snapshot_name, component, snapshots))
