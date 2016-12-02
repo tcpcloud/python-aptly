@@ -31,6 +31,8 @@ Features
 
 - cleanup unused snapshots
 
+- Supports Python 3 (recommended) and Pythonn 2
+
 Create or update publish
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -182,8 +184,8 @@ You can install directly using from local checkout or from pip:
 
 ::
 
-  python setup.py install
-  pip install python-aptly
+  python3 setup.py install
+  pip3 install python-aptly
 
 
 Or better build Debian package with eg.:
@@ -200,7 +202,7 @@ man page.
 
 ::
 
-  PYTHONPATH=. help2man -n "aptly-publisher - tool for easy creation of Aptly multi component publishes" --version-string=$(grep version setup.py|cut -d '"' -f 2) "python aptly/publisher/__main__.py" | sed -e s,__main__.py,aptly-publisher,g -e s,__MAIN__.PY,APTLY-PUBLISHER,g > aptly-publisher.1
+  PYTHONPATH=. help2man -n "aptly-publisher - tool for easy creation of Aptly multi component publishes" --version-string=$(grep version setup.py|cut -d '"' -f 2) "python3 aptly/publisher/__main__.py" | sed -e s,__main__.py,aptly-publisher,g -e s,__MAIN__.PY,APTLY-PUBLISHER,g > aptly-publisher.1
   man aptly-publisher.1
 
 Also see ``doc/examples`` directory.

@@ -7,7 +7,7 @@ long_desc = open('README.rst').read()
 
 setup(
     name="python-aptly",
-    version="0.7.11",
+    version="0.8.0",
     description="Aptly REST API client and tooling",
     long_description=long_desc,
     author="Filip Pytloun",
@@ -31,6 +31,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
     keywords='aptly debian repository',
 )

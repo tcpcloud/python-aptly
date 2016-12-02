@@ -54,7 +54,7 @@ class PublishManager(object):
         except KeyError:
             publish_names = None
 
-        for publish in self._publishes.itervalues():
+        for publish in self._publishes.values():
             if self._publish_match(publish.name, publish_names):
                 publish.do_publish(*args, **kwargs)
             else:
@@ -64,7 +64,7 @@ class PublishManager(object):
         keys = {}
         for e in seq:
             keys[e] = 1
-        return keys.keys()
+        return list(keys.keys())
 
     def cleanup_snapshots(self):
         snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
@@ -154,11 +154,11 @@ class Publish(object):
 
         diff, equal = ({}, {})
 
-        for component, snapshots in self.components.iteritems():
+        for component, snapshots in self.components.items():
             if component not in other.components:
                 continue
 
-            if component not in other.components.keys():
+            if component not in list(other.components.keys()):
                 # Component is missing in other
                 diff[component] = snapshots
                 continue
@@ -277,7 +277,7 @@ class Publish(object):
         Create component snapshots by merging other snapshots of same component
         """
         self.publish_snapshots = []
-        for component, snapshots in self.components.iteritems():
+        for component, snapshots in self.components.items():
             if len(snapshots) <= 1:
                 # Only one snapshot, no need to merge
                 lg.debug("Component %s has only one snapshot %s, not creating merge snapshot" % (component, snapshots))

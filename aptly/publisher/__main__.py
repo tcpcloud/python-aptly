@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+
 import sys
 import argparse
 from aptly.client import Aptly
@@ -119,7 +120,7 @@ def action_promote(client, source, target, components=None, recreate=False,
 
     if packages:
         # We are only going to promote specific packages
-        for component, snapshots in publish_source.components.iteritems():
+        for component, snapshots in publish_source.components.items():
             if components and component not in components:
                 # We don't want to promote this component
                 continue
@@ -165,7 +166,7 @@ def action_diff(source, target, components=[], packages=True):
         return
 
     print("\033[1;36m= Differencies per component\033[m")
-    for component, snapshots in diff.iteritems():
+    for component, snapshots in diff.items():
         if not snapshots:
             continue
 
@@ -216,7 +217,7 @@ def action_publish(client, publishmgr, config_file, recreate=False,
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
 
     config = load_config(config_file)
-    for name, repo in config.get('mirror', {}).iteritems():
+    for name, repo in config.get('mirror', {}).items():
         snapshot = get_latest_snapshot(snapshots, name)
         if not snapshot:
             continue
@@ -226,7 +227,7 @@ def action_publish(client, publishmgr, config_file, recreate=False,
             snapshot=snapshot
         )
 
-    for name, repo in config.get('repo', {}).iteritems():
+    for name, repo in config.get('repo', {}).items():
         snapshot = get_latest_snapshot(snapshots, name)
         if not snapshot:
             continue
