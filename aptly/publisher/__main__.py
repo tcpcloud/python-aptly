@@ -46,6 +46,7 @@ def main():
     group_publish = parser.add_argument_group("Action 'publish'")
     group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
     group_publish.add_argument('--dists', nargs='+', help="Space-separated list of distribution to work with (including prefix), default all.")
+    group_publish.add_argument('--architectures', nargs='+', help="List of architectures to publish (also determined by config, defaults to amd64, i386)")
 
     group_promote = parser.add_argument_group("Action 'promote'")
     group_promote.add_argument('--source', help="Source publish to take snapshots from")
@@ -70,7 +71,8 @@ def main():
                        recreate=args.recreate,
                        force_overwrite=args.force_overwrite,
                        publish_contents=args.publish_contents,
-                       publish_names=args.dists)
+                       publish_names=args.dists,
+                       architectures=args.architectures)
     elif args.action == 'promote':
         if not args.source or not args.target:
             parser.error("Action 'promote' requires both --source and --target arguments")
@@ -213,7 +215,9 @@ def action_diff(source, target, components=[], packages=True):
 
 def action_publish(client, publishmgr, config_file, recreate=False,
                    force_overwrite=False, publish_contents=False,
-                   publish_names=None):
+                   publish_names=None, architectures=None):
+    if not architectures:
+        architectures = []
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
 
     config = load_config(config_file)
@@ -226,6 +230,9 @@ def action_publish(client, publishmgr, config_file, recreate=False,
             distributions=repo['distributions'],
             snapshot=snapshot
         )
+        for arch in repo.get('architectures', []):
+            if arch not in architectures:
+                architectures.append(arch)
 
     for name, repo in config.get('repo', {}).items():
         snapshot = get_latest_snapshot(snapshots, name)
@@ -236,10 +243,13 @@ def action_publish(client, publishmgr, config_file, recreate=False,
             distributions=repo['distributions'],
             snapshot=snapshot
         )
+        for arch in repo.get('architectures', []):
+            if arch not in architectures:
+                architectures.append(arch)
 
     publishmgr.do_publish(recreate=recreate, force_overwrite=force_overwrite,
                           publish_contents=publish_contents,
-                          names=publish_names)
+                          names=publish_names, architectures=architectures)
 
 
 if __name__ == '__main__':

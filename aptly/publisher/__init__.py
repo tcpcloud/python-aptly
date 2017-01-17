@@ -346,22 +346,27 @@ class Publish(object):
             }
         )
 
-    def create_publish(self, force_overwrite=False, publish_contents=False):
-        lg.info("Creating new publish, distribution=%s snapshots=%s" %
-                (self.name, self.publish_snapshots))
+    def create_publish(self, force_overwrite=False, publish_contents=False, architectures=None):
+        lg.info("Creating new publish, distribution=%s snapshots=%s, architectures=%s" %
+                (self.name, self.publish_snapshots, architectures))
 
         if self.prefix:
             prefix = '/%s' % self.prefix
 
+        opts = {
+            "SourceKind": "snapshot",
+            "Distribution": self.distribution,
+            "Sources": self.publish_snapshots,
+            "ForceOverwrite": force_overwrite,
+            'SkipContents': not publish_contents,
+        }
+
+        if architectures:
+            opts['Architectures'] = architectures
+
         self.client.do_post(
             '/publish%s' % (prefix or ''),
-            {
-                "SourceKind": "snapshot",
-                "Distribution": self.distribution,
-                "Sources": self.publish_snapshots,
-                "ForceOverwrite": force_overwrite,
-                'SkipContents': not publish_contents,
-            },
+            opts
         )
 
     def get_publish(self):
@@ -381,13 +386,13 @@ class Publish(object):
         return False
 
     def do_publish(self, recreate=False, force_overwrite=False,
-                   publish_contents=False):
+                   publish_contents=False, architectures=None):
         self.merge_snapshots()
         publish = self.get_publish()
 
         if not publish:
             # New publish
-            self.create_publish(force_overwrite, publish_contents)
+            self.create_publish(force_overwrite, publish_contents, architectures)
         else:
             # Test if publish is up to date
             to_publish = [x['Name'] for x in self.publish_snapshots]
@@ -399,7 +404,7 @@ class Publish(object):
             if recreate:
                 lg.info("Recreating publish %s" % self.name)
                 self.drop_publish()
-                self.create_publish(force_overwrite, publish_contents)
+                self.create_publish(force_overwrite, publish_contents, architectures)
             elif to_publish == published:
                 lg.info("Publish %s is up to date" % self.name)
             else:
