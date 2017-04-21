@@ -40,6 +40,7 @@ def main():
     group_common.add_argument('--timeout', type=int, default=300, help="Aptly client timeout. Raise for larger publishes and slow server.")
     group_common.add_argument('--url', required=True, help="URL to Aptly API, eg. http://localhost:8080")
     group_common.add_argument('--recreate', action="store_true", help="Drop publish and create it again, only way to add new components")
+    group_common.add_argument('--no-recreate', action="store_true", help="Never recreate publish (even when we are adding new components where it's the only option)")
     group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
     group_common.add_argument('--publish-contents', action="store_true", default=False, help="Publish contents. It's slow so disabled by default to support large repositories.")
 
@@ -69,6 +70,7 @@ def main():
     if args.action == 'publish':
         action_publish(client, publishmgr, config_file=args.config,
                        recreate=args.recreate,
+                       no_recreate=args.no_recreate,
                        force_overwrite=args.force_overwrite,
                        publish_contents=args.publish_contents,
                        publish_names=args.dists,
@@ -78,8 +80,8 @@ def main():
             parser.error("Action 'promote' requires both --source and --target arguments")
         action_promote(client, source=args.source, target=args.target,
                        components=args.components, recreate=args.recreate,
-                       packages=args.packages, diff=args.diff,
-                       force_overwrite=args.force_overwrite,
+                       no_recreate=args.no_recreate, packages=args.packages,
+                       diff=args.diff, force_overwrite=args.force_overwrite,
                        publish_contents=args.publish_contents)
     elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
@@ -87,8 +89,8 @@ def main():
 
 
 def action_promote(client, source, target, components=None, recreate=False,
-                   packages=None, diff=False, force_overwrite=False,
-                   publish_contents=False):
+                   no_recreate=False, packages=None, diff=False,
+                   force_overwrite=False, publish_contents=False):
     try:
         publish_source = Publish(client, source, load=True)
     except NoSuchPublish as e:
@@ -156,7 +158,7 @@ def action_promote(client, source, target, components=None, recreate=False,
                     lg.error("Component %s does not exist")
                     sys.exit(1)
 
-    publish_target.do_publish(recreate=recreate,
+    publish_target.do_publish(recreate=recreate, no_recreate=no_recreate,
                               force_overwrite=force_overwrite,
                               publish_contents=publish_contents)
 
@@ -214,8 +216,9 @@ def action_diff(source, target, components=[], packages=True):
 
 
 def action_publish(client, publishmgr, config_file, recreate=False,
-                   force_overwrite=False, publish_contents=False,
-                   publish_names=None, architectures=None):
+                   no_recreate=False, force_overwrite=False,
+                   publish_contents=False, publish_names=None,
+                   architectures=None):
     if not architectures:
         architectures = []
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
@@ -247,7 +250,8 @@ def action_publish(client, publishmgr, config_file, recreate=False,
             if arch not in architectures:
                 architectures.append(arch)
 
-    publishmgr.do_publish(recreate=recreate, force_overwrite=force_overwrite,
+    publishmgr.do_publish(recreate=recreate, no_recreate=no_recreate,
+                          force_overwrite=force_overwrite,
                           publish_contents=publish_contents,
                           names=publish_names, architectures=architectures)
 

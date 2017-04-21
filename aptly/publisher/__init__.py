@@ -369,8 +369,9 @@ class Publish(object):
             opts
         )
 
-    def do_publish(self, recreate=False, force_overwrite=False,
-                   publish_contents=False, architectures=None):
+    def do_publish(self, recreate=False, no_recreate=False,
+                   force_overwrite=False, publish_contents=False,
+                   architectures=None):
         self.merge_snapshots()
         try:
             publish = self._get_publish()
@@ -396,4 +397,15 @@ class Publish(object):
             elif to_publish == published:
                 lg.info("Publish %s is up to date" % self.name)
             else:
-                self.update_publish(force_overwrite, publish_contents)
+                try:
+                    self.update_publish(force_overwrite, publish_contents)
+                except AptlyException as e:
+                    if e.res.status_code == 404:
+                        # Publish exists but we are going to add some new
+                        # components. Unfortunately only way is to recreate it
+                        if no_recreate:
+                            lg.error("Cannot update publish %s (adding new components?), falling back to recreating it is disabled so skipping.")
+                        else:
+                            lg.warning("Cannot update publish %s (adding new components?), falling back to recreating it" % self.name)
+                            self.drop_publish()
+                            self.create_publish(force_overwrite, publish_contents, architectures)
