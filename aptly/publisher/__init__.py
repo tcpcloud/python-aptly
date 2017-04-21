@@ -369,26 +369,14 @@ class Publish(object):
             opts
         )
 
-    def get_publish(self):
-        """
-        Try to find our publish
-        """
-        publishes = self.client.do_get('/publish')
-        if not self.prefix:
-            prefix = '.'
-        else:
-            prefix = self.prefix
-
-        for publish in publishes:
-            if publish['Distribution'] == self.distribution \
-                    and publish['Prefix'] == prefix:
-                return publish
-        return False
-
     def do_publish(self, recreate=False, force_overwrite=False,
                    publish_contents=False, architectures=None):
         self.merge_snapshots()
-        publish = self.get_publish()
+        try:
+            publish = self._get_publish()
+            print publish
+        except NoSuchPublish:
+            publish = False
 
         if not publish:
             # New publish
