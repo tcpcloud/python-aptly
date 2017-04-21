@@ -375,7 +375,6 @@ class Publish(object):
         self.merge_snapshots()
         try:
             publish = self._get_publish()
-            print publish
         except NoSuchPublish:
             publish = False
 
