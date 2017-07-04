@@ -3,9 +3,15 @@
 import time
 import re
 import logging
+import yaml
 from aptly.exceptions import AptlyException, NoSuchPublish
 
 lg = logging.getLogger(__name__)
+
+
+def load_publish(publish):
+    with open(publish, 'r') as publish_file:
+        return yaml.load(publish_file)
 
 
 class PublishManager(object):
@@ -31,6 +37,37 @@ class PublishManager(object):
         """ Add mirror or repo to publish """
         for dist in distributions:
             self.publish(dist).add(snapshot, component)
+
+    def restore_publish(self, components, restore_file, recreate):
+        publish_file = load_publish(restore_file)
+        publish_source = Publish(self.client, publish_file.get('publish'))
+        publish_source.restore_publish(publish_file,
+                                       components=components,
+                                       recreate=recreate)
+
+    def dump_publishes(self, publishes_to_save, dump_dir, prefix):
+
+        if len(dump_dir) > 1 and dump_dir[-1] == '/':
+            dump_dir = dump_dir[:-1]
+
+        save_list = []
+        save_all = True
+
+        if publishes_to_save and not ('all' in publishes_to_save):
+            save_all = False
+
+        publishes = self.client.do_get('/publish')
+        for publish in publishes:
+            name = '{}/{}'.format(publish['Prefix'], publish['Distribution'])
+            if save_all or name in publishes_to_save:
+                save_list.append(Publish(self.client, name, load=True))
+
+        if not save_all and len(save_list) != len(publishes_to_save):
+            raise Exception('Publish(es) required not found')
+
+        for publish in save_list:
+            save_path = ''.join([dump_dir, '/', prefix, publish.name.replace('/', '-')])
+            publish.save_publish(save_path)
 
     def _publish_match(self, publish, names=False):
         """
@@ -185,6 +222,109 @@ class Publish(object):
                     publish['Prefix'] == (self.prefix or '.'):
                 return publish
         raise NoSuchPublish("Publish %s does not exist" % self.name)
+
+    def _remove_snapshots(self, snapshots):
+        for snapshot in snapshots:
+            self.client.do_delete('/snapshots/%s' % snapshot)
+
+    def save_publish(self, save_path):
+        """
+        Serialize publish in YAML
+        """
+        name = self.name.replace('/', '-')
+        timestamp = time.strftime("%Y%m%d%H%M%S")
+
+        yaml_dict = {}
+        yaml_dict["publish"] = self.name
+        yaml_dict["name"] = timestamp
+        yaml_dict["components"] = []
+        for component, snapshots in self.components.items():
+            packages = self.get_packages(component)
+            package_dict = []
+            for package in packages:
+                (arch, name, version, ref) = self.parse_package_ref(package)
+                package_dict.append({'package': name, 'version': version, 'arch': arch, 'ref': ref})
+            snapshot = self._find_snapshot(snapshots[0])
+
+            yaml_dict["components"].append({'component': component, 'snapshot': snapshot['Name'],
+                                            'description': snapshot['Description'], 'packages': package_dict})
+
+        lg.info("Saving publish %s in %s" % (name, save_path))
+        with open(save_path, 'w') as save_file:
+            yaml.dump(yaml_dict, save_file, default_flow_style=False)
+
+    def restore_publish(self, config, components, recreate=False):
+        """
+        Restore publish from config file
+        """
+        if "all" in components:
+            components = []
+
+        try:
+            self.load()
+            publish = True
+        except NoSuchPublish:
+            publish = False
+
+        new_publish_snapshots = []
+        to_publish = []
+        created_snapshots = []
+
+        for saved_component in config.get('components', []):
+            component_name = saved_component.get('component')
+
+            if not component_name:
+                raise Exception("Corrupted file")
+
+            if components and component_name not in components:
+                continue
+
+            saved_packages = []
+            if not saved_component.get('packages'):
+                raise Exception("Component %s is empty" % component_name)
+
+            for package in saved_component.get('packages'):
+                package_ref = '{} {} {} {}'.format(package.get('arch'), package.get('package'), package.get('version'), package.get('ref'))
+                saved_packages.append(package_ref)
+
+            to_publish.append(component_name)
+
+            snapshot_name = '{}-{}'.format("restored", saved_component.get('snapshot'))
+            lg.debug("Creating snapshot %s for component %s of packages: %s"
+                     % (snapshot_name, component_name, saved_packages))
+
+            try:
+                self.client.do_post(
+                    '/snapshots',
+                    data={
+                        'Name': snapshot_name,
+                        'SourceSnapshots': [],
+                        'Description': saved_component.get('description'),
+                        'PackageRefs': saved_packages,
+                    }
+                )
+                created_snapshots.append(snapshot_name)
+            except AptlyException as e:
+                if e.res.status_code == 404:
+                    # delete all the previously created
+                    # snapshots because the file is corrupted
+                    self._remove_snapshots(created_snapshots)
+                    raise Exception("Source snapshot or packages don't exist")
+
+            new_publish_snapshots.append({
+                'Component': component_name,
+                'Name': snapshot_name
+            })
+
+        if components:
+            self.publish_snapshots = [x for x in self.publish_snapshots if x['Component'] not in components and x['Component'] not in to_publish]
+            check_components = [x for x in new_publish_snapshots if x['Component'] in components]
+            if len(check_components) != len(components):
+                self._remove_snapshots(created_snapshots)
+                raise Exception("Not possible to find all the components required in the backup file")
+
+        self.publish_snapshots += new_publish_snapshots
+        self.do_publish(recreate=recreate, merge_snapshots=False)
 
     def load(self):
         """
@@ -371,8 +511,9 @@ class Publish(object):
 
     def do_publish(self, recreate=False, no_recreate=False,
                    force_overwrite=False, publish_contents=False,
-                   architectures=None):
-        self.merge_snapshots()
+                   architectures=None, merge_snapshots=True):
+        if merge_snapshots:
+            self.merge_snapshots()
         try:
             publish = self._get_publish()
         except NoSuchPublish:

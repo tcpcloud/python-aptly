@@ -33,7 +33,7 @@ def main():
     parser = argparse.ArgumentParser("aptly-publisher")
 
     group_common = parser.add_argument_group("Common")
-    parser.add_argument('action', help="Action to perform (publish, promote, cleanup)")
+    parser.add_argument('action', help="Action to perform (publish, promote, cleanup, restore, dump)")
     group_common.add_argument('-v', '--verbose', action="store_true")
     group_common.add_argument('-d', '--debug', action="store_true")
     group_common.add_argument('--dry', '--dry-run', action="store_true")
@@ -43,6 +43,7 @@ def main():
     group_common.add_argument('--no-recreate', action="store_true", help="Never recreate publish (even when we are adding new components where it's the only option)")
     group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
     group_common.add_argument('--publish-contents', action="store_true", default=False, help="Publish contents. It's slow so disabled by default to support large repositories.")
+    group_common.add_argument('--components', nargs='+', help="Space-separated list of components to promote or restore")
 
     group_publish = parser.add_argument_group("Action 'publish'")
     group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
@@ -52,9 +53,16 @@ def main():
     group_promote = parser.add_argument_group("Action 'promote'")
     group_promote.add_argument('--source', help="Source publish to take snapshots from")
     group_promote.add_argument('--target', help="Target publish to update")
-    group_promote.add_argument('--components', nargs='+', help="Space-separated list of components to promote")
     group_promote.add_argument('--packages', nargs='+', help="Space-separated list of packages to promote")
     group_promote.add_argument('--diff', action="store_true", help="Show differences between publishes (snapshots to be updated)")
+
+    group_restore = parser.add_argument_group("Action 'restore'")
+    group_restore.add_argument('-r', '--restore-file', help="File used to restore publish")
+
+    group_save = parser.add_argument_group("Action 'dump'")
+    group_save.add_argument('-s', '--save-dir', help="Path of where dump of publish will be done")
+    group_save.add_argument('-x', '--prefix', default="saved-", help="Prefix for dump files' names")
+    group_save.add_argument('-p', '--publish', nargs='+', help="Space-separated list of publishes to save")
 
     args = parser.parse_args()
 
@@ -86,6 +94,12 @@ def main():
     elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
         sys.exit(0)
+    elif args.action == 'dump':
+        action_dump(publishmgr, args.save_dir, args.publish, args.prefix)
+    elif args.action == "restore":
+        action_restore(publishmgr, components=args.components,
+                       recreate=args.recreate,
+                       restore_file=args.restore_file)
 
 
 def action_promote(client, source, target, components=None, recreate=False,
@@ -161,6 +175,14 @@ def action_promote(client, source, target, components=None, recreate=False,
     publish_target.do_publish(recreate=recreate, no_recreate=no_recreate,
                               force_overwrite=force_overwrite,
                               publish_contents=publish_contents)
+
+
+def action_dump(publishmgr, path, publish_to_save, prefix):
+    publishmgr.dump_publishes(publish_to_save, path, prefix)
+
+
+def action_restore(publishmgr, components, restore_file, recreate):
+    publishmgr.restore_publish(components, restore_file, recreate)
 
 
 def action_diff(source, target, components=[], packages=True):
