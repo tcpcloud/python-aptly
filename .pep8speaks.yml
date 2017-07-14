@@ -1,0 +1,5 @@
+pycodestyle:
+  ignore:
+    - E501
+scanner:
+  diff_only: true
