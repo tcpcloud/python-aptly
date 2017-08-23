@@ -192,9 +192,6 @@ class Publish(object):
         diff, equal = ({}, {})
 
         for component, snapshots in self.components.items():
-            if component not in other.components:
-                continue
-
             if component not in list(other.components.keys()):
                 # Component is missing in other
                 diff[component] = snapshots
