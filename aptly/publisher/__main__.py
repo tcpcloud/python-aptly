@@ -138,6 +138,7 @@ def action_promote(client, source, target, components=None, recreate=False,
 
     if packages:
         # We are only going to promote specific packages
+        packages_promoted = False
         for component, snapshots in publish_source.components.items():
             if components and component not in components:
                 # We don't want to promote this component
@@ -159,6 +160,10 @@ def action_promote(client, source, target, components=None, recreate=False,
                     }
                 )
                 publish_target.components[component].append(snapshot_name)
+                packages_promoted = True
+        if not packages_promoted:
+            lg.error("No packages were promoted : are you sure components: %s and packages: %s are valid?" % (components, packages))
+            sys.exit(1)
     else:
         # Publish whole components
         # Use source publish components structure for creation of target publish
