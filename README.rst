@@ -159,7 +159,7 @@ You can see differences between publishes with following command:
 
   aptly-publisher -v --url http://localhost:8080  \
   --source nightly/trusty --target testing/trusty \
-  publish --diff
+  promote --diff
 
 Example output can look like this:
 
