@@ -69,17 +69,18 @@ class PublishManager(object):
             save_path = ''.join([dump_dir, '/', prefix, publish.name.replace('/', '-')])
             publish.save_publish(save_path)
 
-    def _publish_match(self, publish, names=False):
+    def _publish_match(self, publish, names=False, name_only=False):
         """
         Check if publish name matches list of names or regex patterns
         """
         if names:
             for name in names:
-                if isinstance(name, re._pattern_type):
+                if not name_only and isinstance(name, re._pattern_type):
                     if re.match(name, publish.name):
                         return True
                 else:
-                    if publish in [name, './%s' % name]:
+                    operand = name if name_only else [name, './%s' % name]
+                    if publish in operand:
                         return True
             return False
         else:
@@ -87,12 +88,17 @@ class PublishManager(object):
 
     def do_publish(self, *args, **kwargs):
         try:
+            publish_dist = kwargs.pop('dist')
+        except KeyError:
+            publish_dist = None
+
+        try:
             publish_names = kwargs.pop('names')
         except KeyError:
             publish_names = None
 
         for publish in self._publishes.values():
-            if self._publish_match(publish.name, publish_names):
+            if self._publish_match(publish.name, publish_names or publish_dist, publish_names):
                 publish.do_publish(*args, **kwargs)
             else:
                 lg.info("Skipping publish %s not matching publish names" % publish.name)

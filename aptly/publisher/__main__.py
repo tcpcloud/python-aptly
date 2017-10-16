@@ -44,6 +44,7 @@ def main():
     group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
     group_common.add_argument('--publish-contents', action="store_true", default=False, help="Publish contents. It's slow so disabled by default to support large repositories.")
     group_common.add_argument('--components', nargs='+', help="Space-separated list of components to promote or restore")
+    group_common.add_argument('-p', '--publish', nargs='+', help="Space-separated list of publish")
 
     group_publish = parser.add_argument_group("Action 'publish'")
     group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
@@ -62,7 +63,6 @@ def main():
     group_save = parser.add_argument_group("Action 'dump'")
     group_save.add_argument('-s', '--save-dir', help="Path of where dump of publish will be done")
     group_save.add_argument('-x', '--prefix', default="saved-", help="Prefix for dump files' names")
-    group_save.add_argument('-p', '--publish', nargs='+', help="Space-separated list of publishes to save")
 
     args = parser.parse_args()
 
@@ -81,7 +81,8 @@ def main():
                        no_recreate=args.no_recreate,
                        force_overwrite=args.force_overwrite,
                        publish_contents=args.publish_contents,
-                       publish_names=args.dists,
+                       publish_names=args.publish,
+                       publish_dist=args.dists,
                        architectures=args.architectures)
     elif args.action == 'promote':
         if not args.source or not args.target:
@@ -244,7 +245,7 @@ def action_diff(source, target, components=[], packages=True):
 
 def action_publish(client, publishmgr, config_file, recreate=False,
                    no_recreate=False, force_overwrite=False,
-                   publish_contents=False, publish_names=None,
+                   publish_contents=False, publish_dist=None, publish_names=None,
                    architectures=None):
     if not architectures:
         architectures = []
@@ -279,7 +280,7 @@ def action_publish(client, publishmgr, config_file, recreate=False,
 
     publishmgr.do_publish(recreate=recreate, no_recreate=no_recreate,
                           force_overwrite=force_overwrite,
-                          publish_contents=publish_contents,
+                          publish_contents=publish_contents, dist=publish_dist,
                           names=publish_names, architectures=architectures)
 
 
