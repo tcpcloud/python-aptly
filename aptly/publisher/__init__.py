@@ -156,7 +156,7 @@ class Publish(object):
         dist_split = distribution.split('/')
         self.distribution = dist_split[-1]
         if dist_split[0] != self.distribution:
-            self.prefix = dist_split[0]
+            self.prefix = "_".join(dist_split[:-1])
         else:
             self.prefix = ''
 
