@@ -58,7 +58,7 @@ class PublishManager(object):
 
         publishes = self.client.do_get('/publish')
         for publish in publishes:
-            name = '{}/{}'.format(publish['Prefix'], publish['Distribution'])
+            name = '{}/{}'.format(publish['Prefix'].replace("/", "_"), publish['Distribution'])
             if save_all or name in publishes_to_save:
                 save_list.append(Publish(self.client, name, load=True))
 
@@ -222,7 +222,7 @@ class Publish(object):
         publishes = self.client.do_get('/publish')
         for publish in publishes:
             if publish['Distribution'] == self.distribution and \
-                    publish['Prefix'] == (self.prefix or '.'):
+                    publish['Prefix'].replace("/", "_") == (self.prefix or '.'):
                 return publish
         raise NoSuchPublish("Publish %s does not exist" % self.name)
 
