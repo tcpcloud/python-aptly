@@ -62,7 +62,7 @@ def main():
     group_restore.add_argument('-r', '--restore-file', help="File used to restore publish")
 
     group_save = parser.add_argument_group("Action 'dump'")
-    group_save.add_argument('-s', '--save-dir', help="Path of where dump of publish will be done")
+    group_save.add_argument('-s', '--save-dir', default='.', help="Path of where dump of publish will be done")
     group_save.add_argument('-x', '--prefix', default="saved-", help="Prefix for dump files' names")
 
     args = parser.parse_args()

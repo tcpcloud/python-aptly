@@ -67,7 +67,7 @@ class PublishManager(object):
             raise Exception('Publish(es) required not found')
 
         for publish in save_list:
-            save_path = ''.join([dump_dir, '/', prefix, publish.name.replace('/', '-')])
+            save_path = ''.join([dump_dir, '/', prefix, publish.name.replace('/', '-'), '.yml'])
             publish.save_publish(save_path)
 
     def _publish_match(self, publish, names=False, name_only=False):
