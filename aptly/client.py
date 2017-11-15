@@ -62,14 +62,26 @@ class Aptly(object):
         )
         return self._process_result(res)
 
-    def do_delete(self, uri, timeout=None):
+    def do_delete(self, uri, data=None, timeout=None):
+        data_json = json.dumps(data) if data else ""
         url = '%s%s' % (self.url, uri)
-        lg.debug("DELETE %s" % url)
+
+        if data:
+            lg.debug("DELETE %s, data=%s" % (url, data_json))
+        else:
+            lg.debug("DELETE %s" % url)
 
         if self.dry:
             return
 
-        res = self.session.delete(
+        if data:
+            res = self.session.delete(
+                url,
+                data=data_json,
+                timeout=timeout or self.timeout,
+            )
+        else:
+            res = self.session.delete(
             url,
             timeout=timeout or self.timeout,
         )

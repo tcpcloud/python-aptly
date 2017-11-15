@@ -18,20 +18,24 @@ This is how workflow can look like and what publisher can do for you:
 Features
 --------
 
-- create or update publish from latest snapshots
+- Create or update publish from latest snapshots
 
   - it takes configuration in yaml format which defines what to publish and
     how
   - expected snapshot format is ``<name>-<timestamp>``
 
-- promote publish
+- Promote publish
 
   - use source publish snapshots to create or update another publish (eg.
     testing -> stable)
 
-- cleanup unused snapshots
+- Cleanup unused snapshots
 
-- Supports Python 3 (recommended) and Pythonn 2
+- Purge publishes and repositories
+
+- Restore and dump publishes
+
+- Supports Python 3 (recommended) and Python 2
 
 Create or update publish
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -176,6 +180,17 @@ publish is updated (eg. nightly).
 ::
 
   aptly-publisher -v --url http://localhost:8080 cleanup
+
+Purge unused packages from repo and publishes
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you are uploading a lot version of the same package, you may want to
+get rid of old packages version in your snapshots.
+Be careful, the option ``--hard`` will remove the packages from your repos.
+
+::
+
+  aptly-publisher -v --url http://localhost:8080 --component extra --hard purge
 
 Installation
 ============
