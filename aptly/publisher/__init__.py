@@ -110,6 +110,45 @@ class PublishManager(object):
             keys[e] = 1
         return list(keys.keys())
 
+    def do_purge(self, config, components=[], hard_purge=False):
+        (repo_dict, publish_dict) = self.get_repo_information(config, self.client, hard_purge, components)
+        publishes = self.client.do_get('/publish')
+        publish_list = []
+
+        for publish in publishes:
+            name = '{}/{}'.format(publish['Prefix'].replace("/", "_"), publish['Distribution'])
+            publish_list.append(Publish(self.client, name, load=True))
+
+        for publish in publish_list:
+            repo_dict = publish.purge_publish(repo_dict, publish_dict, components, publish=True)
+
+        if hard_purge:
+            self.remove_unused_packages(repo_dict)
+            self.cleanup_snapshots()
+
+    @staticmethod
+    def get_repo_information(config, client, fill_repo=False, components=[]):
+        """ fill two dictionnaries : one containing all the packages for every repository
+            and the second one associating to every component of every publish its repository"""
+        repo_dict = {}
+        publish_dict = {}
+
+        for name, repo in config.get('repo', {}).items():
+            if components and repo.get('component') not in components:
+                continue
+            if fill_repo:
+                packages = client.do_get('/{}/{}/{}'.format("repos", name, "packages"))
+                repo_dict[name] = packages
+            for distribution in repo.get('distributions'):
+                publish_dict[(distribution.split('/')[0], repo.get('component'))] = name
+
+        return (repo_dict, publish_dict)
+
+    def remove_unused_packages(self, repo_dict):
+        for repo_name, packages in repo_dict.items():
+            if packages:
+                self.client.do_delete('/repos/%s/packages' % repo_name, data={'PackageRefs': packages})
+
     def cleanup_snapshots(self):
         snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
         exclude = []
@@ -259,6 +298,76 @@ class Publish(object):
         lg.info("Saving publish %s in %s" % (name, save_path))
         with open(save_path, 'w') as save_file:
             yaml.dump(yaml_dict, save_file, default_flow_style=False)
+
+    def purge_publish(self, repo_dict, publish_dict, components=[], publish=False):
+
+        new_publish_snapshots = []
+
+        for snapshot in self.publish_snapshots:
+            # packages to be kept
+            processed = []
+            name = snapshot["Name"]
+            component = snapshot["Component"]
+            purge_packages = []
+            location = self.name.split('/')[0]
+            try:
+                repo_name = publish_dict[(location, component)]
+            except KeyError:
+                new_publish_snapshots.append(snapshot)
+                continue
+
+            if components and component not in components:
+                new_publish_snapshots.append(snapshot)
+                if repo_dict:
+                    repo_dict[repo_name] = []
+                continue
+
+            packages = self.client.do_get('/{}/{}/{}'.format("snapshots", name, "packages"))
+            packages = sorted(packages, key=lambda x: self.parse_package_ref(x)[2], reverse=True)
+
+            for package in packages:
+                package_name = self.parse_package_ref(package)[1]
+
+                if package_name not in processed:
+                    processed.append(package_name)
+                    if repo_dict and package in repo_dict[repo_name]:
+                        repo_dict[repo_name].remove(package)
+
+                    purge_packages.append(package)
+
+            if purge_packages != packages:
+                snapshot_name = '{}-{}'.format(name, 'purged')
+                try:
+                    lg.debug("Creating new snapshot: %s" % snapshot_name)
+                    self.client.do_post(
+                        '/snapshots',
+                        data={
+                            'Name': snapshot_name,
+                            'SourceSnapshots': [],
+                            'Description': 'Minimal snapshot from repo {}'.format(repo_name),
+                            'PackageRefs': purge_packages,
+                        }
+                    )
+
+                except AptlyException as e:
+                    if e.res.status_code == 404:
+                        raise Exception('Error while creating snapshot : {}'.format(repr(e)))
+                    else:
+                        lg.debug("Snapshot %s already exist" % snapshot_name)
+
+                new_publish_snapshots.append({
+                    'Component': component,
+                    'Name': snapshot_name
+                })
+            else:
+                new_publish_snapshots.append(snapshot)
+
+        if self.publish_snapshots != new_publish_snapshots:
+            self.publish_snapshots = new_publish_snapshots
+            if publish:
+                self.do_publish(recreate=False, merge_snapshots=False)
+
+        return repo_dict
 
     def restore_publish(self, config, components, recreate=False):
         """
@@ -523,13 +632,18 @@ class Publish(object):
 
     def do_publish(self, recreate=False, no_recreate=False,
                    force_overwrite=False, publish_contents=False,
-                   architectures=None, merge_snapshots=True):
+                   architectures=None, merge_snapshots=True,
+                   only_latest=False, config=None, components=[]):
         if merge_snapshots:
             self.merge_snapshots()
         try:
             publish = self._get_publish()
         except NoSuchPublish:
             publish = False
+
+        if only_latest:
+            (_, publish_dict) = PublishManager.get_repo_information(config, self.client)
+            self.purge_publish([], publish_dict, components, False)
 
         if not publish:
             # New publish

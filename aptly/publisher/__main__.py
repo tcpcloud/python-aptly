@@ -33,7 +33,7 @@ def main():
     parser = argparse.ArgumentParser("aptly-publisher")
 
     group_common = parser.add_argument_group("Common")
-    parser.add_argument('action', help="Action to perform (publish, promote, cleanup, restore, dump)")
+    parser.add_argument('action', help="Action to perform (publish, promote, cleanup, restore, dump, purge)")
     group_common.add_argument('-v', '--verbose', action="store_true")
     group_common.add_argument('-d', '--debug', action="store_true")
     group_common.add_argument('--dry', '--dry-run', action="store_true")
@@ -43,7 +43,7 @@ def main():
     group_common.add_argument('--no-recreate', action="store_true", help="Never recreate publish (even when we are adding new components where it's the only option)")
     group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
     group_common.add_argument('--publish-contents', action="store_true", default=False, help="Publish contents. It's slow so disabled by default to support large repositories.")
-    group_common.add_argument('--components', nargs='+', help="Space-separated list of components to promote or restore")
+    group_common.add_argument('--components', nargs='+', help="Space-separated list of components to promote or restore or to purge (in case of purge)")
     group_common.add_argument('--storage', default="", help="Storage backend to use for all publishes, can be empty (filesystem, default), swift:[name] or s3:[name]")
     group_common.add_argument('-p', '--publish', nargs='+', help="Space-separated list of publish")
 
@@ -51,12 +51,16 @@ def main():
     group_publish.add_argument('-c', '--config', default="/etc/aptly/publisher.yaml", help="Configuration YAML file")
     group_publish.add_argument('--dists', nargs='+', help="Space-separated list of distribution to work with (including prefix), default all.")
     group_publish.add_argument('--architectures', nargs='+', help="List of architectures to publish (also determined by config, defaults to amd64, i386)")
+    group_publish.add_argument('--only-latest', action="store_true", default=False, help="Publish only latest packages of every publishes")
 
     group_promote = parser.add_argument_group("Action 'promote'")
     group_promote.add_argument('--source', help="Source publish to take snapshots from")
     group_promote.add_argument('--target', help="Target publish to update")
     group_promote.add_argument('--packages', nargs='+', help="Space-separated list of packages to promote")
     group_promote.add_argument('--diff', action="store_true", help="Show differences between publishes (snapshots to be updated)")
+
+    group_purge = parser.add_argument_group("Purge")
+    group_purge.add_argument('--hard', action="store_true", default=False, help="Remove all unused packages and snapshots")
 
     group_restore = parser.add_argument_group("Action 'restore'")
     group_restore.add_argument('-r', '--restore-file', help="File used to restore publish")
@@ -84,7 +88,9 @@ def main():
                        publish_contents=args.publish_contents,
                        publish_names=args.publish,
                        publish_dist=args.dists,
-                       architectures=args.architectures)
+                       architectures=args.architectures,
+                       only_latest=args.only_latest,
+                       components=args.components)
     elif args.action == 'promote':
         if not args.source or not args.target:
             parser.error("Action 'promote' requires both --source and --target arguments")
@@ -98,6 +104,9 @@ def main():
         sys.exit(0)
     elif args.action == 'dump':
         action_dump(publishmgr, args.save_dir, args.publish, args.prefix)
+    elif args.action == 'purge':
+        config = load_config(args.config)
+        publishmgr.do_purge(config, components=args.components, hard_purge=args.hard)
     elif args.action == "restore":
         action_restore(publishmgr, components=args.components,
                        recreate=args.recreate,
@@ -247,7 +256,7 @@ def action_diff(source, target, components=[], packages=True):
 def action_publish(client, publishmgr, config_file, recreate=False,
                    no_recreate=False, force_overwrite=False,
                    publish_contents=False, publish_dist=None, publish_names=None,
-                   architectures=None):
+                   architectures=None, only_latest=False, components=[]):
     if not architectures:
         architectures = []
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
@@ -284,7 +293,9 @@ def action_publish(client, publishmgr, config_file, recreate=False,
     publishmgr.do_publish(recreate=recreate, no_recreate=no_recreate,
                           force_overwrite=force_overwrite,
                           publish_contents=publish_contents, dist=publish_dist,
-                          names=publish_names, architectures=architectures)
+                          names=publish_names, architectures=architectures,
+                          only_latest=only_latest, config=config,
+                          components=components)
 
 
 if __name__ == '__main__':
