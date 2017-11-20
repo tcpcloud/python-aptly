@@ -18,29 +18,30 @@ class PublishManager(object):
     """
     Manage multiple publishes
     """
-    def __init__(self, client):
+    def __init__(self, client, storage=""):
         self.client = client
         self._publishes = {}
+        self.storage = storage
         self.timestamp = int(time.time())
 
-    def publish(self, distribution):
+    def publish(self, distribution, storage=""):
         """
         Get or create publish
         """
         try:
             return self._publishes[distribution]
         except KeyError:
-            self._publishes[distribution] = Publish(self.client, distribution, timestamp=self.timestamp)
+            self._publishes[distribution] = Publish(self.client, distribution, timestamp=self.timestamp, storage=(storage or self.storage))
             return self._publishes[distribution]
 
-    def add(self, snapshot, distributions, component='main'):
+    def add(self, snapshot, distributions, component='main', storage=""):
         """ Add mirror or repo to publish """
         for dist in distributions:
-            self.publish(dist).add(snapshot, component)
+            self.publish(dist, storage=storage).add(snapshot, component)
 
     def restore_publish(self, components, restore_file, recreate):
         publish_file = load_publish(restore_file)
-        publish_source = Publish(self.client, publish_file.get('publish'))
+        publish_source = Publish(self.client, publish_file.get('publish'), storage=publish_file.get('storage', self.storage))
         publish_source.restore_publish(publish_file,
                                        components=components,
                                        recreate=recreate)
@@ -60,13 +61,13 @@ class PublishManager(object):
         for publish in publishes:
             name = '{}/{}'.format(publish['Prefix'].replace("/", "_"), publish['Distribution'])
             if save_all or name in publishes_to_save:
-                save_list.append(Publish(self.client, name, load=True))
+                save_list.append(Publish(self.client, name, load=True, storage=publish.get('Storage', self.storage)))
 
         if not save_all and len(save_list) != len(publishes_to_save):
             raise Exception('Publish(es) required not found')
 
         for publish in save_list:
-            save_path = ''.join([dump_dir, '/', prefix, publish.name.replace('/', '-')])
+            save_path = ''.join([dump_dir, '/', prefix, publish.name.replace('/', '-'), '.yml'])
             publish.save_publish(save_path)
 
     def _publish_match(self, publish, names=False, name_only=False):
@@ -188,9 +189,10 @@ class Publish(object):
     """
     Single publish object
     """
-    def __init__(self, client, distribution, timestamp=None, recreate=False, load=False, merge_prefix='_'):
+    def __init__(self, client, distribution, timestamp=None, recreate=False, load=False, merge_prefix='_', storage=""):
         self.client = client
         self.recreate = recreate
+        self.storage = storage
 
         dist_split = distribution.split('/')
         self.distribution = dist_split[-1]
@@ -261,7 +263,8 @@ class Publish(object):
         publishes = self.client.do_get('/publish')
         for publish in publishes:
             if publish['Distribution'] == self.distribution and \
-                    publish['Prefix'].replace("/", "_") == (self.prefix or '.'):
+                    publish['Prefix'].replace("/", "_") == (self.prefix or '.') and \
+                    publish['Storage'] == self.storage:
                 return publish
         raise NoSuchPublish("Publish %s does not exist" % self.name)
 
@@ -280,6 +283,7 @@ class Publish(object):
         yaml_dict["publish"] = self.name
         yaml_dict["name"] = timestamp
         yaml_dict["components"] = []
+        yaml_dict["storage"] = self.storage
         for component, snapshots in self.components.items():
             packages = self.get_packages(component)
             package_dict = []
@@ -581,16 +585,18 @@ class Publish(object):
             })
 
     def drop_publish(self):
-        lg.info("Deleting publish, distribution=%s" % self.name)
+        lg.info("Deleting publish, distribution=%s, storage=%s" % (self.name, self.storage or "local"))
 
         self.client.do_delete('/publish/%s/%s' % (self.prefix, self.distribution))
 
     def update_publish(self, force_overwrite=False, publish_contents=False):
-        lg.info("Updating publish, distribution=%s snapshots=%s" %
-                (self.name, self.publish_snapshots))
+        lg.info("Updating publish, distribution=%s storage=%s snapshots=%s" %
+                (self.name, self.storage or "local", self.publish_snapshots))
+
+        prefix = '%s%s' % (self.storage+":" or "", self.prefix)
 
         self.client.do_put(
-            '/publish/%s/%s' % (self.prefix, self.distribution),
+            '/publish/%s/%s' % (prefix, self.distribution),
             {
                 'Snapshots': self.publish_snapshots,
                 'ForceOverwrite': force_overwrite,
@@ -599,13 +605,16 @@ class Publish(object):
         )
 
     def create_publish(self, force_overwrite=False, publish_contents=False, architectures=None):
-        lg.info("Creating new publish, distribution=%s snapshots=%s, architectures=%s" %
-                (self.name, self.publish_snapshots, architectures))
+        lg.info("Creating new publish, distribution=%s storage=%s snapshots=%s, architectures=%s" %
+                (self.name, self.storage or "local", self.publish_snapshots, architectures))
 
         if self.prefix:
-            prefix = '/%s' % self.prefix
+            prefix = '%s%s' % ("/"+self.storage+":" or "/", self.prefix)
+        else:
+            prefix = '%s' % ("/"+self.storage+":" or "")
 
         opts = {
+            "Storage": self.storage,
             "SourceKind": "snapshot",
             "Distribution": self.distribution,
             "Sources": self.publish_snapshots,
@@ -638,7 +647,8 @@ class Publish(object):
 
         if not publish:
             # New publish
-            self.create_publish(force_overwrite, publish_contents, architectures)
+            self.create_publish(force_overwrite, publish_contents,
+                                architectures)
         else:
             # Test if publish is up to date
             to_publish = [x['Name'] for x in self.publish_snapshots]
@@ -650,7 +660,8 @@ class Publish(object):
             if recreate:
                 lg.info("Recreating publish %s" % self.name)
                 self.drop_publish()
-                self.create_publish(force_overwrite, publish_contents, architectures)
+                self.create_publish(force_overwrite, publish_contents,
+                                    architectures)
             elif to_publish == published:
                 lg.info("Publish %s is up to date" % self.name)
             else:
@@ -665,4 +676,6 @@ class Publish(object):
                         else:
                             lg.warning("Cannot update publish %s (adding new components?), falling back to recreating it" % self.name)
                             self.drop_publish()
-                            self.create_publish(force_overwrite, publish_contents, architectures)
+                            self.create_publish(force_overwrite,
+                                                publish_contents,
+                                                architectures)

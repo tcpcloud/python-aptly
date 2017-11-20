@@ -64,6 +64,8 @@ and target distributions for publishing.
       cloudlab:
         # Publish as component cloudlab
         component: cloudlab
+        # Use swift storage named myswift for publish storage
+        storage: swift:myswift
         distributions:
           # We want to publish our packages (that can't break anything for
           # sure) immediately to both nightly and testing repositories

@@ -44,6 +44,7 @@ def main():
     group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
     group_common.add_argument('--publish-contents', action="store_true", default=False, help="Publish contents. It's slow so disabled by default to support large repositories.")
     group_common.add_argument('--components', nargs='+', help="Space-separated list of components to promote or restore or to purge (in case of purge)")
+    group_common.add_argument('--storage', default="", help="Storage backend to use for all publishes, can be empty (filesystem, default), swift:[name] or s3:[name]")
     group_common.add_argument('-p', '--publish', nargs='+', help="Space-separated list of publish")
 
     group_publish = parser.add_argument_group("Action 'publish'")
@@ -65,7 +66,7 @@ def main():
     group_restore.add_argument('-r', '--restore-file', help="File used to restore publish")
 
     group_save = parser.add_argument_group("Action 'dump'")
-    group_save.add_argument('-s', '--save-dir', help="Path of where dump of publish will be done")
+    group_save.add_argument('-s', '--save-dir', default='.', help="Path of where dump of publish will be done")
     group_save.add_argument('-x', '--prefix', default="saved-", help="Prefix for dump files' names")
 
     args = parser.parse_args()
@@ -77,7 +78,7 @@ def main():
         lg_root.setLevel(logging.DEBUG)
 
     client = Aptly(args.url, dry=args.dry, timeout=args.timeout)
-    publishmgr = PublishManager(client)
+    publishmgr = PublishManager(client, storage=args.storage)
 
     if args.action == 'publish':
         action_publish(client, publishmgr, config_file=args.config,
@@ -268,6 +269,7 @@ def action_publish(client, publishmgr, config_file, recreate=False,
         publishmgr.add(
             component=repo.get('component', 'main'),
             distributions=repo['distributions'],
+            storage=repo.get('storage', ""),
             snapshot=snapshot
         )
         for arch in repo.get('architectures', []):
@@ -281,6 +283,7 @@ def action_publish(client, publishmgr, config_file, recreate=False,
         publishmgr.add(
             component=repo.get('component', 'main'),
             distributions=repo['distributions'],
+            storage=repo.get('storage', ""),
             snapshot=snapshot
         )
         for arch in repo.get('architectures', []):
