@@ -98,7 +98,8 @@ def main():
                        components=args.components, recreate=args.recreate,
                        no_recreate=args.no_recreate, packages=args.packages,
                        diff=args.diff, force_overwrite=args.force_overwrite,
-                       publish_contents=args.publish_contents)
+                       publish_contents=args.publish_contents,
+                       storage=args.storage)
     elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
         sys.exit(0)
@@ -115,14 +116,14 @@ def main():
 
 def action_promote(client, source, target, components=None, recreate=False,
                    no_recreate=False, packages=None, diff=False,
-                   force_overwrite=False, publish_contents=False):
+                   force_overwrite=False, publish_contents=False, storage=""):
     try:
-        publish_source = Publish(client, source, load=True)
+        publish_source = Publish(client, source, load=True, storage=storage)
     except NoSuchPublish as e:
         lg.error(e)
         sys.exit(1)
 
-    publish_target = Publish(client, target)
+    publish_target = Publish(client, target, storage=storage)
     try:
         publish_target.load()
     except NoSuchPublish:
