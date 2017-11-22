@@ -192,7 +192,14 @@ class Publish(object):
     def __init__(self, client, distribution, timestamp=None, recreate=False, load=False, merge_prefix='_', storage=""):
         self.client = client
         self.recreate = recreate
-        self.storage = storage
+
+        # Try to get storage from distribution (eg. s3:mys3:xenial)
+        dist_split = distribution.split(':')
+        if len(dist_split) > 1:
+            self.storage = "{}:{}".format(dist_split[0], dist_split[1])
+            distribution = dist_split[-1]
+        else:
+            self.storage = storage
 
         dist_split = distribution.split('/')
         self.distribution = dist_split[-1]
@@ -234,7 +241,7 @@ class Publish(object):
 
         Return tuple (diff, equal) of dict {'component': ['snapshot']}
         """
-        lg.debug("Comparing publish %s and %s" % (self.name, other.name))
+        lg.debug("Comparing publish %s (%s) and %s (%s)" % (self.name, self.storage or "local", other.name, other.storage or "local"))
 
         diff, equal = ({}, {})
 
@@ -266,7 +273,7 @@ class Publish(object):
                     publish['Prefix'].replace("/", "_") == (self.prefix or '.') and \
                     publish['Storage'] == self.storage:
                 return publish
-        raise NoSuchPublish("Publish %s does not exist" % self.name)
+        raise NoSuchPublish("Publish %s (%s) does not exist" % (self.name, self.storage or "local"))
 
     def _remove_snapshots(self, snapshots):
         for snapshot in snapshots:
@@ -658,12 +665,12 @@ class Publish(object):
             published.sort()
 
             if recreate:
-                lg.info("Recreating publish %s" % self.name)
+                lg.info("Recreating publish %s (%s)" % (self.name, self.storage or "local"))
                 self.drop_publish()
                 self.create_publish(force_overwrite, publish_contents,
                                     architectures)
             elif to_publish == published:
-                lg.info("Publish %s is up to date" % self.name)
+                lg.info("Publish %s (%s) is up to date" % (self.name, self.storage or "local"))
             else:
                 try:
                     self.update_publish(force_overwrite, publish_contents)
