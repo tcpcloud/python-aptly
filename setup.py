@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'requests>=0.14',
         'PyYaml',
+        'python-apt',
     ],
     entry_points={
         'console_scripts': ['aptly-publisher = aptly.publisher.__main__:main']
