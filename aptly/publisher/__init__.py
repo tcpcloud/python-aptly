@@ -210,6 +210,9 @@ class Publish(object):
             self.prefix = ''
 
         self.name = '%s/%s' % (self.prefix or '.', self.distribution)
+        self.full_name = "{}{}{}".format(self.storage+":" if self.storage else
+                                         "", self.prefix+"/" if self.prefix else
+                                         "", self.distribution)
 
         if not timestamp:
             self.timestamp = int(time.time())
@@ -596,17 +599,13 @@ class Publish(object):
 
     def drop_publish(self):
         lg.info("Deleting publish, distribution=%s, storage=%s" % (self.name, self.storage or "local"))
-
-        self.client.do_delete('/publish/%s/%s' % (self.prefix, self.distribution))
+        self.client.do_delete('/publish/%s' % (self.full_name))
 
     def update_publish(self, force_overwrite=False, publish_contents=False):
         lg.info("Updating publish, distribution=%s storage=%s snapshots=%s" %
                 (self.name, self.storage or "local", self.publish_snapshots))
-
-        prefix = '%s%s' % (self.storage+":" or "", self.prefix)
-
         self.client.do_put(
-            '/publish/%s/%s' % (prefix, self.distribution),
+            '/publish/%s' % (self.full_name),
             {
                 'Snapshots': self.publish_snapshots,
                 'ForceOverwrite': force_overwrite,
@@ -682,9 +681,9 @@ class Publish(object):
                         # Publish exists but we are going to add some new
                         # components. Unfortunately only way is to recreate it
                         if no_recreate:
-                            lg.error("Cannot update publish %s (adding new components?), falling back to recreating it is disabled so skipping.")
+                            lg.error("Cannot update publish %s (adding new components?), falling back to recreating it is disabled so skipping." % self.full_name)
                         else:
-                            lg.warning("Cannot update publish %s (adding new components?), falling back to recreating it" % self.name)
+                            lg.warning("Cannot update publish %s (adding new components?), falling back to recreating it" % self.full_name)
                             self.drop_publish()
                             self.create_publish(force_overwrite,
                                                 publish_contents,
