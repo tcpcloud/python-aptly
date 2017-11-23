@@ -4,6 +4,7 @@ import time
 import re
 import logging
 import yaml
+import apt_pkg
 from aptly.exceptions import AptlyException, NoSuchPublish
 
 lg = logging.getLogger(__name__)
@@ -308,6 +309,8 @@ class Publish(object):
 
     def purge_publish(self, repo_dict, publish_dict, components=[], publish=False):
 
+        apt_pkg.init_system()
+
         new_publish_snapshots = []
 
         for snapshot in self.publish_snapshots:
@@ -330,7 +333,7 @@ class Publish(object):
                 continue
 
             packages = self.client.do_get('/{}/{}/{}'.format("snapshots", name, "packages"))
-            packages = sorted(packages, key=lambda x: self.parse_package_ref(x)[2], reverse=True)
+            packages = sorted(packages, key=lambda x: self.parse_package_ref(x)[2], reverse=True, cmp=apt_pkg.version_compare)
 
             for package in packages:
                 package_name = self.parse_package_ref(package)[1]
