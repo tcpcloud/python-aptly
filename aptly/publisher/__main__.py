@@ -14,7 +14,7 @@ import copy
 import re
 
 logging.basicConfig()
-lg_root = logging.getLogger('aptly')
+lg_aptly = logging.getLogger('aptly')
 lg = logging.getLogger('aptly-publisher')
 
 
@@ -54,8 +54,8 @@ def main():
     group_publish.add_argument('--only-latest', action="store_true", default=False, help="Publish only latest packages of every publishes")
 
     group_promote = parser.add_argument_group("Action 'promote'")
-    group_promote.add_argument('--source', help="Source publish to take snapshots from")
-    group_promote.add_argument('--target', help="Target publish to update")
+    group_promote.add_argument('--source', help="Source publish to take snapshots from. Can be regular expression, eg. jessie(/?.*)/nightly")
+    group_promote.add_argument('--target', help="Target publish to update. Must be format if source is regex, eg. jessie{0}/testing")
     group_promote.add_argument('--packages', nargs='+', help="Space-separated list of packages to promote")
     group_promote.add_argument('--diff', action="store_true", help="Show differences between publishes (snapshots to be updated)")
 
@@ -72,10 +72,12 @@ def main():
     args = parser.parse_args()
 
     if args.verbose:
-        lg_root.setLevel(logging.INFO)
+        lg_aptly.setLevel(logging.INFO)
+        lg.setLevel(logging.INFO)
 
     if args.debug:
-        lg_root.setLevel(logging.DEBUG)
+        lg_aptly.setLevel(logging.DEBUG)
+        lg.setLevel(logging.DEBUG)
 
     client = Aptly(args.url, dry=args.dry, timeout=args.timeout)
     publishmgr = PublishManager(client, storage=args.storage)
@@ -113,10 +115,9 @@ def main():
                        recreate=args.recreate,
                        restore_file=args.restore_file)
 
-
-def action_promote(client, source, target, components=None, recreate=False,
-                   no_recreate=False, packages=None, diff=False,
-                   force_overwrite=False, publish_contents=False, storage=""):
+def promote(client, source, target, components=None, recreate=False,
+            no_recreate=False, packages=None, diff=False, force_overwrite=False,
+            publish_contents=False, storage=""):
     try:
         publish_source = Publish(client, source, load=True, storage=storage)
     except NoSuchPublish as e:
@@ -141,12 +142,12 @@ def action_promote(client, source, target, components=None, recreate=False,
     # Check if target is not already up to date
     diffs, equals = publish_source.compare(publish_target, components=components)
     if not diffs:
-        lg.warn("Target is up to date with source publish")
+        lg.warn("Target {0} is up to date with source publish {1}".format(target, source))
         if not recreate:
-            lg.warn("There is nothing to do")
+            lg.warn("There is nothing to do with target publish {0}".format(target))
             sys.exit(0)
         else:
-            lg.warn("Recreating publish on your command")
+            lg.warn("Recreating target publish {0} on your command".format(target))
 
     if packages:
         # We are only going to promote specific packages
@@ -193,6 +194,47 @@ def action_promote(client, source, target, components=None, recreate=False,
                               force_overwrite=force_overwrite,
                               publish_contents=publish_contents)
 
+def find_publishes(client, source, target):
+    ret = []
+    if not re.search(r'{[0-9]+}', target):
+        lg.error("Source publish is regular expression but target does not refer any match groups. See help for more info.")
+        sys.exit(1)
+    lg.debug("Looking for source publishes matching regular expression: {0}".format(source))
+    publishes = client.do_get('/publish')
+    re_source = re.compile(source)
+    for publish in publishes:
+        name = "{}{}{}".format(publish['Storage']+":" if publish['Storage']
+                                else "", publish['Prefix']+"/" if
+                                publish['Prefix'] else "",
+                                publish['Distribution'])
+        match = re_source.match(name)
+        if match:
+            try:
+                target_parsed = target.format(*match.groups())
+            except IndexError:
+                lg.error("Can't format target publish {0} using groups {1}".format(target_parsed, match.groups()))
+                sys.exit(1)
+            ret.append((name, target_parsed))
+    return ret
+
+
+def action_promote(client, **kwargs):
+    # Determine if source is regular expression with group, in this case, we
+    # will work with multiple publishes
+    if re.search(r'\(.*\)', kwargs['source']):
+        for publish in find_publishes(client, kwargs['source'], kwargs['target']):
+            source = publish[0]
+            target = publish[1]
+            lg.info("Found source publish matching regex, promoting {0} to {1}".format(source, target))
+            kwargs_copy = kwargs.copy()
+            kwargs_copy['source'] = source
+            kwargs_copy['target'] = target
+            try:
+                promote(client, **kwargs_copy)
+            except SystemExit:
+                pass
+    else:
+        promote(client, **kwargs)
 
 def action_dump(publishmgr, path, publish_to_save, prefix):
     publishmgr.dump_publishes(publish_to_save, path, prefix)
@@ -205,7 +247,7 @@ def action_restore(publishmgr, components, restore_file, recreate):
 def action_diff(source, target, components=[], packages=True):
     diff, equal = source.compare(target, components=components)
     if not diff:
-        print("Target is up to date with source publish")
+        print("Target {0} is up to date with source publish {1}".format(target.full_name.replace('_', '/'), source.full_name.replace('_', '/')))
         return
 
     print("\033[1;36m= Differencies per component\033[m")
