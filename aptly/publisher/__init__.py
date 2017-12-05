@@ -61,8 +61,9 @@ class PublishManager(object):
         publishes = self.client.do_get('/publish')
         for publish in publishes:
             name = '{}/{}'.format(publish['Prefix'].replace("/", "_"), publish['Distribution'])
-            if save_all or name in publishes_to_save:
-                save_list.append(Publish(self.client, name, load=True, storage=publish.get('Storage', self.storage)))
+            current_publish = Publish(self.client, name, load=True, storage=publish.get('Storage', self.storage))
+            if (save_all or name in publishes_to_save) and current_publish not in save_list:
+                save_list.append(current_publish)
 
         if not save_all and len(save_list) != len(publishes_to_save):
             raise Exception('Publish(es) required not found')
