@@ -135,14 +135,16 @@ class PublishManager(object):
         repo_dict = {}
         publish_dict = {}
 
-        for name, repo in config.get('repo', {}).items():
-            if components and repo.get('component') not in components:
-                continue
-            if fill_repo:
-                packages = client.do_get('/{}/{}/{}'.format("repos", name, "packages"))
-                repo_dict[name] = packages
-            for distribution in repo.get('distributions'):
-                publish_dict[(distribution.split('/')[0], repo.get('component'))] = name
+        for origin in ['repo', 'mirror']:
+            for name, repo in config.get(origin, {}).items():
+                if components and repo.get('component') not in components:
+                    continue
+                if fill_repo and origin == 'repo':
+                    packages = client.do_get('/{}/{}/{}'.format("repos", name, "packages"))
+                    repo_dict[name] = packages
+                for distribution in repo.get('distributions'):
+                    publish_name = str.join('/', distribution.split('/')[:-1])
+                    publish_dict[(publish_name, repo.get('component'))] = name
 
         return (repo_dict, publish_dict)
 
@@ -323,10 +325,11 @@ class Publish(object):
             name = snapshot["Name"]
             component = snapshot["Component"]
             purge_packages = []
-            location = self.name.split('/')[0]
-            try:
+            location = self.name.split('/')[0].replace('_', '/')
+
+            if (location, component) in publish_dict:
                 repo_name = publish_dict[(location, component)]
-            except KeyError:
+            else:
                 new_publish_snapshots.append(snapshot)
                 continue
 
@@ -344,7 +347,7 @@ class Publish(object):
 
                 if package_name not in processed:
                     processed.append(package_name)
-                    if repo_dict and package in repo_dict[repo_name]:
+                    if repo_dict and repo_name in repo_dict and package in repo_dict[repo_name]:
                         repo_dict[repo_name].remove(package)
 
                     purge_packages.append(package)
@@ -358,7 +361,7 @@ class Publish(object):
                         data={
                             'Name': snapshot_name,
                             'SourceSnapshots': [],
-                            'Description': 'Minimal snapshot from repo {}'.format(repo_name),
+                            'Description': 'Minimal snapshot from {}'.format(repo_name),
                             'PackageRefs': purge_packages,
                         }
                     )
