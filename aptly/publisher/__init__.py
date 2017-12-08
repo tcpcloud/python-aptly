@@ -193,9 +193,10 @@ class Publish(object):
     """
     Single publish object
     """
-    def __init__(self, client, distribution, timestamp=None, recreate=False, load=False, merge_prefix='_', storage=""):
+    def __init__(self, client, distribution, timestamp=None, recreate=False, load=False, merge_prefix='_', storage="", architectures=[]):
         self.client = client
         self.recreate = recreate
+        self.architectures = architectures
 
         # Try to get storage from distribution (eg. s3:mys3:xenial)
         dist_split = distribution.split(':')
@@ -464,6 +465,7 @@ class Publish(object):
         Load publish info from remote
         """
         publish = self._get_publish()
+        self.architectures = publish['Architectures']
         for source in publish['Sources']:
             component = source['Component']
             snapshot = source['Name']
@@ -635,8 +637,8 @@ class Publish(object):
             'SkipContents': not publish_contents,
         }
 
-        if architectures:
-            opts['Architectures'] = architectures
+        if architectures or self.architectures:
+            opts['Architectures'] = architectures or self.architectures
 
         self.client.do_post(
             '/publish%s' % (prefix or ''),
@@ -661,7 +663,7 @@ class Publish(object):
         if not publish:
             # New publish
             self.create_publish(force_overwrite, publish_contents,
-                                architectures)
+                                architectures or self.architectures)
         else:
             # Test if publish is up to date
             to_publish = [x['Name'] for x in self.publish_snapshots]
@@ -674,7 +676,7 @@ class Publish(object):
                 lg.info("Recreating publish %s (%s)" % (self.name, self.storage or "local"))
                 self.drop_publish()
                 self.create_publish(force_overwrite, publish_contents,
-                                    architectures)
+                                    architectures or self.architectures)
             elif to_publish == published:
                 lg.info("Publish %s (%s) is up to date" % (self.name, self.storage or "local"))
             else:
@@ -691,4 +693,4 @@ class Publish(object):
                             self.drop_publish()
                             self.create_publish(force_overwrite,
                                                 publish_contents,
-                                                architectures)
+                                                architectures or self.architectures)

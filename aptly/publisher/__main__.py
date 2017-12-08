@@ -192,7 +192,8 @@ def promote(client, source, target, components=None, recreate=False,
 
     publish_target.do_publish(recreate=recreate, no_recreate=no_recreate,
                               force_overwrite=force_overwrite,
-                              publish_contents=publish_contents)
+                              publish_contents=publish_contents,
+                              architectures=publish_source.architectures)
 
 def find_publishes(client, source, target):
     ret = []
