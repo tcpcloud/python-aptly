@@ -301,7 +301,6 @@ class Publish(object):
         """
         Serialize publish in YAML
         """
-        name = self.name.replace('/', '-')
         timestamp = time.strftime("%Y%m%d%H%M%S")
 
         yaml_dict = {}
@@ -320,6 +319,7 @@ class Publish(object):
             yaml_dict["components"].append({'component': component, 'snapshot': snapshot['Name'],
                                             'description': snapshot['Description'], 'packages': package_dict})
 
+        name = self.name.replace('/', '-')
         lg.info("Saving publish %s in %s" % (name, save_path))
         with open(save_path, 'w') as save_file:
             yaml.dump(yaml_dict, save_file, default_flow_style=False)
