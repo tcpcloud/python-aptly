@@ -58,14 +58,24 @@ class PublishManager(object):
         if publishes_to_save and not ('all' in publishes_to_save):
             save_all = False
 
+        re_publish = None
+        if len(publishes_to_save) == 1 and re.search(r'\(.*\)', publishes_to_save[0]):
+            re_publish = re.compile(publishes_to_save[0])
+
         publishes = self.client.do_get('/publish')
         for publish in publishes:
-            name = '{}/{}'.format(publish['Prefix'].replace("/", "_"), publish['Distribution'])
-            current_publish = Publish(self.client, name, load=True, storage=publish.get('Storage', self.storage))
-            if (save_all or name in publishes_to_save) and current_publish not in save_list:
-                save_list.append(current_publish)
+            name = "{}{}{}".format(publish['Storage']+":" if publish['Storage']
+                                else "", publish['Prefix']+"/" if
+                                publish['Prefix'] else "",
+                                publish['Distribution'])
 
-        if not save_all and len(save_list) != len(publishes_to_save):
+            if not re_publish or re_publish.match(name):
+                if save_all or name in publishes_to_save or re_publish:
+                    current_publish = Publish(self.client, name, load=True, storage=publish.get('Storage', self.storage))
+                    if current_publish not in save_list:
+                        save_list.append(current_publish)
+
+        if not save_all and not re_publish and len(save_list) != len(publishes_to_save):
             raise Exception('Publish(es) required not found')
 
         for publish in save_list:
