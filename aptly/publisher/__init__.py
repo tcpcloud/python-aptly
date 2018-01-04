@@ -598,15 +598,21 @@ class Publish(object):
                 packages = self.client.do_get('/snapshots/%s/packages' % snapshot)
                 package_refs.extend(packages)
 
-            self.client.do_post(
-                '/snapshots',
-                data={
-                    'Name': snapshot_name,
-                    'SourceSnapshots': snapshots,
-                    'Description': "Merged from sources: %s" % ', '.join("'%s'" % snap for snap in snapshots),
-                    'PackageRefs': package_refs,
-                }
-            )
+            try:
+                self.client.do_post(
+                    '/snapshots',
+                    data={
+                        'Name': snapshot_name,
+                        'SourceSnapshots': snapshots,
+                        'Description': "Merged from sources: %s" % ', '.join("'%s'" % snap for snap in snapshots),
+                        'PackageRefs': package_refs,
+                    }
+                )
+            except AptlyException as e:
+                if e.res.status_code == 400:
+                    lg.warning("Error creating snapshot %s, assuming it already exists" % snapshot_name)
+                else:
+                    raise
 
             self.publish_snapshots.append({
                 'Component': component,
