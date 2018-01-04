@@ -213,7 +213,7 @@ def find_publishes(client, source, target):
             try:
                 target_parsed = target.format(*match.groups())
             except IndexError:
-                lg.error("Can't format target publish {0} using groups {1}".format(target_parsed, match.groups()))
+                lg.error("Can't format target publish {0} using groups {1}".format(target, match.groups()))
                 sys.exit(1)
             ret.append((name, target_parsed))
     return ret
