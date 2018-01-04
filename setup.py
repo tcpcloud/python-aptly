@@ -7,7 +7,7 @@ long_desc = open('README.rst').read()
 
 setup(
     name="python-aptly",
-    version="0.12.4",
+    version="0.12.5",
     description="Aptly REST API client and tooling",
     long_description=long_desc,
     author="Filip Pytloun",
