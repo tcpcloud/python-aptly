@@ -623,7 +623,8 @@ class Publish(object):
         lg.info("Deleting publish, distribution=%s, storage=%s" % (self.name, self.storage or "local"))
         self.client.do_delete('/publish/%s' % (self.full_name))
 
-    def update_publish(self, force_overwrite=False, publish_contents=False):
+    def update_publish(self, force_overwrite=False, publish_contents=False,
+                       acquire_by_hash=True):
         lg.info("Updating publish, distribution=%s storage=%s snapshots=%s" %
                 (self.name, self.storage or "local", self.publish_snapshots))
         self.client.do_put(
@@ -632,10 +633,12 @@ class Publish(object):
                 'Snapshots': self.publish_snapshots,
                 'ForceOverwrite': force_overwrite,
                 'SkipContents': not publish_contents,
+                'AcquireByHash': acquire_by_hash,
             }
         )
 
-    def create_publish(self, force_overwrite=False, publish_contents=False, architectures=None):
+    def create_publish(self, force_overwrite=False, publish_contents=False,
+                       architectures=None, acquire_by_hash=True):
         lg.info("Creating new publish, distribution=%s storage=%s snapshots=%s, architectures=%s" %
                 (self.name, self.storage or "local", self.publish_snapshots, architectures))
 
@@ -651,6 +654,7 @@ class Publish(object):
             "Sources": self.publish_snapshots,
             "ForceOverwrite": force_overwrite,
             'SkipContents': not publish_contents,
+            'AcquireByHash': acquire_by_hash,
         }
 
         if architectures or self.architectures:
