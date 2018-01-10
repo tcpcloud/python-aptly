@@ -341,7 +341,7 @@ def action_publish(client, publishmgr, config_file, recreate=False,
 
     publishmgr.do_publish(recreate=recreate, no_recreate=no_recreate,
                           force_overwrite=force_overwrite,
-                          acquire_by_hash=args.acquire_by_hash,
+                          acquire_by_hash=acquire_by_hash,
                           publish_contents=publish_contents, dist=publish_dist,
                           names=publish_names, architectures=architectures,
                           only_latest=only_latest, config=config,

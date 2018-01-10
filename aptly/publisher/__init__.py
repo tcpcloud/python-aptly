@@ -454,6 +454,8 @@ class Publish(object):
                     # snapshots because the file is corrupted
                     self._remove_snapshots(created_snapshots)
                     raise Exception("Source snapshot or packages don't exist")
+                else:
+                    raise
 
             new_publish_snapshots.append({
                 'Component': component_name,
@@ -667,7 +669,7 @@ class Publish(object):
 
     def do_publish(self, recreate=False, no_recreate=False,
                    force_overwrite=False, publish_contents=False,
-                   acquire_by_hash=False architectures=None,
+                   acquire_by_hash=False, architectures=None,
                    merge_snapshots=True, only_latest=False, config=None,
                    components=[]):
         if merge_snapshots:
@@ -717,3 +719,5 @@ class Publish(object):
                             self.create_publish(force_overwrite,
                                                 publish_contents,
                                                 architectures or self.architectures)
+                    else:
+                        raise
