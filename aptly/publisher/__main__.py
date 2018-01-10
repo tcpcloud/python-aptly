@@ -43,6 +43,7 @@ def main():
     group_common.add_argument('--no-recreate', action="store_true", help="Never recreate publish (even when we are adding new components where it's the only option)")
     group_common.add_argument('--force-overwrite', action="store_true", help="Overwrite files in pool/ directory without notice")
     group_common.add_argument('--publish-contents', action="store_true", default=False, help="Publish contents. It's slow so disabled by default to support large repositories.")
+    group_common.add_argument('--acquire-by-hash', action="store_true", default=False, help="Use Acquire-by-hash option. This may help with repository consistency.")
     group_common.add_argument('--components', nargs='+', help="Space-separated list of components to promote or restore or to purge (in case of purge)")
     group_common.add_argument('--storage', default="", help="Storage backend to use for all publishes, can be empty (filesystem, default), swift:[name] or s3:[name]")
     group_common.add_argument('-p', '--publish', nargs='+', help="Space-separated list of publish")
@@ -88,6 +89,7 @@ def main():
                        no_recreate=args.no_recreate,
                        force_overwrite=args.force_overwrite,
                        publish_contents=args.publish_contents,
+                       acquire_by_hash=args.acquire_by_hash,
                        publish_names=args.publish,
                        publish_dist=args.dists,
                        architectures=args.architectures,
@@ -101,6 +103,7 @@ def main():
                        no_recreate=args.no_recreate, packages=args.packages,
                        diff=args.diff, force_overwrite=args.force_overwrite,
                        publish_contents=args.publish_contents,
+                       acquire_by_hash=args.acquire_by_hash,
                        storage=args.storage)
     elif args.action == 'cleanup':
         publishmgr.cleanup_snapshots()
@@ -117,7 +120,7 @@ def main():
 
 def promote(client, source, target, components=None, recreate=False,
             no_recreate=False, packages=None, diff=False, force_overwrite=False,
-            publish_contents=False, storage=""):
+            publish_contents=False, acquire_by_hash=False, storage=""):
     try:
         publish_source = Publish(client, source, load=True, storage=storage)
     except NoSuchPublish as e:
@@ -193,6 +196,7 @@ def promote(client, source, target, components=None, recreate=False,
     publish_target.do_publish(recreate=recreate, no_recreate=no_recreate,
                               force_overwrite=force_overwrite,
                               publish_contents=publish_contents,
+                              acquire_by_hash=args.acquire_by_hash,
                               architectures=publish_source.architectures)
 
 def find_publishes(client, source, target):
@@ -299,8 +303,9 @@ def action_diff(source, target, components=[], packages=True):
 
 def action_publish(client, publishmgr, config_file, recreate=False,
                    no_recreate=False, force_overwrite=False,
-                   publish_contents=False, publish_dist=None, publish_names=None,
-                   architectures=None, only_latest=False, components=[]):
+                   publish_contents=False, acquire_by_hash=False,
+                   publish_dist=None, publish_names=None, architectures=None,
+                   only_latest=False, components=[]):
     if not architectures:
         architectures = []
     snapshots = client.do_get('/snapshots', {'sort': 'time'})
@@ -336,6 +341,7 @@ def action_publish(client, publishmgr, config_file, recreate=False,
 
     publishmgr.do_publish(recreate=recreate, no_recreate=no_recreate,
                           force_overwrite=force_overwrite,
+                          acquire_by_hash=args.acquire_by_hash,
                           publish_contents=publish_contents, dist=publish_dist,
                           names=publish_names, architectures=architectures,
                           only_latest=only_latest, config=config,

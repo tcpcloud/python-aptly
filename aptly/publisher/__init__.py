@@ -667,8 +667,9 @@ class Publish(object):
 
     def do_publish(self, recreate=False, no_recreate=False,
                    force_overwrite=False, publish_contents=False,
-                   architectures=None, merge_snapshots=True,
-                   only_latest=False, config=None, components=[]):
+                   acquire_by_hash=False architectures=None,
+                   merge_snapshots=True, only_latest=False, config=None,
+                   components=[]):
         if merge_snapshots:
             self.merge_snapshots()
         try:
@@ -682,8 +683,8 @@ class Publish(object):
 
         if not publish:
             # New publish
-            self.create_publish(force_overwrite, publish_contents,
-                                architectures or self.architectures)
+            self.create_publish(force_overwrite, publish_contents, architectures
+                                or self.architectures, acquire_by_hash)
         else:
             # Test if publish is up to date
             to_publish = [x['Name'] for x in self.publish_snapshots]
@@ -696,12 +697,14 @@ class Publish(object):
                 lg.info("Recreating publish %s (%s)" % (self.name, self.storage or "local"))
                 self.drop_publish()
                 self.create_publish(force_overwrite, publish_contents,
-                                    architectures or self.architectures)
+                                    architectures or self.architectures,
+                                    acquire_by_hash)
             elif to_publish == published:
                 lg.info("Publish %s (%s) is up to date" % (self.name, self.storage or "local"))
             else:
                 try:
-                    self.update_publish(force_overwrite, publish_contents)
+                    self.update_publish(force_overwrite, publish_contents,
+                                        acquire_by_hash)
                 except AptlyException as e:
                     if e.res.status_code == 404:
                         # Publish exists but we are going to add some new
