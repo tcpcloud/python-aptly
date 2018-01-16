@@ -205,7 +205,7 @@ def find_publishes(client, source, target):
         lg.error("Source publish is regular expression but target does not refer any match groups. See help for more info.")
         sys.exit(1)
     lg.debug("Looking for source publishes matching regular expression: {0}".format(source))
-    publishes = client.do_get('/publish')
+    publishes = Publish._get_publishes(client)
     re_source = re.compile(source)
     for publish in publishes:
         name = "{}{}{}".format(publish['Storage']+":" if publish['Storage']
@@ -308,7 +308,7 @@ def action_publish(client, publishmgr, config_file, recreate=False,
                    only_latest=False, components=[]):
     if not architectures:
         architectures = []
-    snapshots = client.do_get('/snapshots', {'sort': 'time'})
+    snapshots = Publish._get_snapshots(client)
 
     config = load_config(config_file)
     for name, repo in config.get('mirror', {}).items():
