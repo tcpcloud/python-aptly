@@ -6,6 +6,7 @@ import logging
 import yaml
 import apt_pkg
 from aptly.exceptions import AptlyException, NoSuchPublish
+from aptly.decorators import CachedMethod
 
 lg = logging.getLogger(__name__)
 
@@ -150,7 +151,7 @@ class PublishManager(object):
                 if components and repo.get('component') not in components:
                     continue
                 if fill_repo and origin == 'repo':
-                    packages = client.do_get('/{}/{}/{}'.format("repos", name, "packages"))
+                    packages = Publish._get_packages("repos", name)
                     repo_dict[name] = packages
                 for distribution in repo.get('distributions'):
                     publish_name = str.join('/', distribution.split('/')[:-1])
@@ -281,11 +282,26 @@ class Publish(object):
 
         return (diff, equal)
 
+    @staticmethod
+    @CachedMethod
+    def _get_packages(client, source_type, source_name):
+        return client.do_get('/{}/{}/packages'.format(source_type, source_name))
+
+    @staticmethod
+    @CachedMethod
+    def _get_publishes(client):
+        return client.do_get('/publish')
+
+    @staticmethod
+    @CachedMethod
+    def _get_snapshots(client):
+        return client.do_get('/snapshots', {'sort': 'time'})
+
     def _get_publish(self):
         """
         Find this publish on remote
         """
-        publishes = self.client.do_get('/publish')
+        publishes = self._get_publishes(self.client)
         for publish in publishes:
             if publish['Distribution'] == self.distribution and \
                     publish['Prefix'].replace("/", "_") == (self.prefix or '.') and \
@@ -350,7 +366,7 @@ class Publish(object):
                     repo_dict[repo_name] = []
                 continue
 
-            packages = self.client.do_get('/{}/{}/{}'.format("snapshots", name, "packages"))
+            packages = self._get_packages(self.client, "snapshots", name)
             packages = sorted(packages, key=lambda x: self.parse_package_ref(x)[2], reverse=True, cmp=apt_pkg.version_compare)
 
             for package in packages:
@@ -503,7 +519,7 @@ class Publish(object):
                 # We don't want packages for this component
                 continue
 
-            component_refs = self.client.do_get('/snapshots/%s/packages' % snapshot['Name'])
+            component_refs = self._get_packages(self.client, "snapshots", snapshot['Name'])
             if packages:
                 # Filter package names
                 for ref in component_refs:
@@ -536,7 +552,7 @@ class Publish(object):
         """
         Find snapshot on remote by name or regular expression
         """
-        remote_snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
+        remote_snapshots = self._get_snapshots(self.client)
         for remote in reversed(remote_snapshots):
             if remote["Name"] == name or \
                     re.match(name, remote["Name"]):
@@ -597,7 +613,7 @@ class Publish(object):
             package_refs = []
             for snapshot in snapshots:
                 # Get package refs from each snapshot
-                packages = self.client.do_get('/snapshots/%s/packages' % snapshot)
+                packages = self._get_packages(self.client, "snapshots", snapshot)
                 package_refs.extend(packages)
 
             try:
