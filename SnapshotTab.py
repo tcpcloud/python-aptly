@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-
-# copy from dev.py
-
 from PyQt5.QtCore import QStringListModel, Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,

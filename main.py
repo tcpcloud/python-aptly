@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
 
 from SnapshotTab import SnapshotTab
 from RepositoryTab import RepositoryTab
+from package_promotion import PackagePromotion
+from component_promotion import ComponentPromotion
 
 class Window(QWidget):
     def __init__(self, parent=None):
@@ -17,6 +19,9 @@ class Window(QWidget):
         tabs = QTabWidget()
         tabs.addTab(SnapshotTab(), "Snapshot management")
         tabs.addTab(RepositoryTab(), "Repository management")
+        tabs.addTab(PackagePromotion(), "Package Promotion")
+        tabs.addTab(ComponentPromotion(), "Component Promotion")
+
 
         self.setLayout(layout)
         layout.addWidget(tabs)

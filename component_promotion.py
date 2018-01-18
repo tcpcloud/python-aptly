@@ -11,13 +11,12 @@ from aptly.publisher import Publish, PublishManager
 from aptly.client import Aptly
 
 
-class PackagePromotion(QWidget):
+class ComponentPromotion(QWidget):
     def __init__(self, parent=None):
-        super(PackagePromotion, self).__init__(parent)
+        super(ComponentPromotion, self).__init__(parent)
 
         # initialize widgets
-        self.componentBox = QComboBox()
-        self.componentLabel = QLabel("Component")
+        self.componentLabel = QLabel("List of components")
         self.sourcePublishBox = QComboBox()
         self.sourcePublishLabel = QLabel("Source")
         self.targetPublishBox = QComboBox()
@@ -30,7 +29,7 @@ class PackagePromotion(QWidget):
         # place widget in the layout
         layout = QGridLayout()
         layout.addWidget(self.sourcePublishBox, 0, 0, 1, 1)
-        layout.addWidget(self.componentBox, 0, 1, 1, 1)
+        layout.addWidget(self.componentLabel, 0, 1, 1, 1)
         layout.addWidget(self.targetPublishBox, 0, 2, 1, 1)
         layout.addWidget(self.packageLabel, 1, 1, 2, 1)
         layout.addWidget(self.publishButton, 1, 2, 1, 1)
@@ -43,8 +42,7 @@ class PackagePromotion(QWidget):
         self.fillPublishBox()
         self.recreatePackageBox()
         # controllers
-        self.sourcePublishBox.currentIndexChanged.connect(self.updateSnapshotBox)
-        self.componentBox.currentIndexChanged.connect(self.recreatePackageBox)
+        self.sourcePublishBox.currentIndexChanged.connect(self.recreatePackageBox)
         self.publishButton.clicked.connect(self.updatePublish)
 
 
@@ -68,26 +66,14 @@ class PackagePromotion(QWidget):
     def updatePublish(self):
         targetPublish = self.publishDic[self.targetPublishBox.currentText()]
         targetPublish.load()
-        packageList = set()
         # find a better way to get packages
         for index in reversed(range(self.model.rowCount())):
             currentItem = self.model.item(index)
             if currentItem and currentItem.checkState() != 0:
-                packageList.add(currentItem.text())
-
-        component = self.componentBox.currentText()
-        oldSnapshotName = targetPublish.components[component][0]
-        st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-        newSnapshotName = "{}-{}-{}".format(oldSnapshotName, "merged-gui", st)
-        old_packages = targetPublish._get_packages(self.client, "snapshots", oldSnapshotName)
-        for package in old_packages:
-            packageList.add(package)
-        print(packageList)
-
-        targetPublish.create_snapshots_from_packages(list(packageList), newSnapshotName, 'Snapshot created from GUI for component {}'.format(component))
-        targetPublish.replace_snapshot(component, newSnapshotName)
+                component = currentItem.text()
+                newSnapshot = self.publishDic[self.sourcePublishBox.currentText()].components[component][0]
+                targetPublish.replace_snapshot(component, newSnapshot)
         targetPublish.do_publish(recreate=False, merge_snapshots=False)
-
 
     def fillPublishBox(self):
         self.sourcePublishBox.clear()
@@ -97,31 +83,15 @@ class PackagePromotion(QWidget):
             self.targetPublishBox.addItem(publish)
         self.sourcePublishBox.update()
         self.targetPublishBox.update()
-        # update snapshot box
-        self.updateSnapshotBox()
-
-    def updateSnapshotBox(self):
-        name = self.sourcePublishBox.currentText()
-        currentPublish = self.publishDic[name]
-        currentPublish.load()
-        self.componentBox.clear()
-        for component in sorted(list(currentPublish.components.keys())):
-            self.componentBox.addItem(component)
-        self.componentBox.update()
 
     def recreatePackageBox(self):
         self.model.removeRows(0, self.model.rowCount())
-        component = self.componentBox.currentText()
         currentPublish = self.publishDic[self.sourcePublishBox.currentText()]
+        currentPublish.load()
+        components = currentPublish.components.keys()
 
-        # empty sometimes?
-        if not component:
-            return
-
-        packages = sorted(currentPublish._get_packages(self.client, "snapshots", currentPublish.components[component][0]))
-
-        for package in packages:
-            item = QStandardItem(package)
+        for component in components:
+            item = QStandardItem(component)
             item.setCheckable(True)
             item.setCheckState(Qt.Checked)
             self.model.appendRow(item)
