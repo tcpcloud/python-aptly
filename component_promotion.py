@@ -66,6 +66,7 @@ class ComponentPromotion(QWidget):
     def updatePublish(self):
         targetPublish = self.publishDic[self.targetPublishBox.currentText()]
         targetPublish.load()
+
         # find a better way to get packages
         for index in reversed(range(self.model.rowCount())):
             currentItem = self.model.item(index)
@@ -73,6 +74,7 @@ class ComponentPromotion(QWidget):
                 component = currentItem.text()
                 newSnapshot = self.publishDic[self.sourcePublishBox.currentText()].components[component][0]
                 targetPublish.replace_snapshot(component, newSnapshot)
+
         targetPublish.do_publish(recreate=False, merge_snapshots=False)
 
     def fillPublishBox(self):
