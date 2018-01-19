@@ -12,8 +12,7 @@ from package_promotion import PackagePromotion
 from component_promotion import ComponentPromotion
 from data_manager import DataManager
 
-class Window(QWidget):
-
+class Window(QMainWindow):
 
     def __init__(self, parent=None):
         super(Window, self).__init__(parent)
@@ -23,6 +22,7 @@ class Window(QWidget):
         dataManager.create_client("http://127.0.0.1:8089")
         dataManager.preLoadPublishes()
 
+        mainWidget = QWidget(self)
         layout = QGridLayout()
         self.tabs = QTabWidget()
         self.tabs.addTab(SnapshotTab(dataManager), "Snapshot management")
@@ -30,9 +30,15 @@ class Window(QWidget):
         self.tabs.addTab(PackagePromotion(dataManager), "Package Promotion")
         self.tabs.addTab(ComponentPromotion(dataManager), "Component Promotion")
 
-        self.setLayout(layout)
+        mainWidget.setLayout(layout)
         layout.addWidget(self.tabs)
         self.tabs.currentChanged.connect(self.foo)
+        self.setCentralWidget(mainWidget)
+
+        menubar = QMenuBar()
+        menubar.addMenu('shit')
+        menubar.addMenu('shit2')
+        self.setMenuBar(menubar)
 
     def foo(self, item):
         t = self.tabs.currentWidget()
