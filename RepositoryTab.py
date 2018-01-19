@@ -11,9 +11,11 @@ from aptly.client import Aptly
 
 
 class RepositoryTab(QWidget):
-    def __init__(self, parent=None):
+
+    def __init__(self, dataManager,parent=None):
         super(RepositoryTab, self).__init__(parent)
 
+        self.dataManager = dataManager
         # initialize widgets
         self.repoBox = QComboBox()
         self.deleteButton = QPushButton("Delete")
@@ -33,18 +35,14 @@ class RepositoryTab(QWidget):
 
         # initialize datas
         self.model = QStandardItemModel(self.packageLabel)
-        self.client = self.createClient()
         self.repoDictionnary = {}
         # controllers
         self.loadRepository()
         self.repoBox.currentIndexChanged.connect(self.updateList)
         self.deleteButton.clicked.connect(self.removePackage)
 
-    def createClient(self):
-        return Aptly("http://127.0.0.1:8089", dry=False, timeout=600)
-
     def loadRepository(self):
-        repos = Publish._get_repositories(self.client)
+        repos = Publish._get_repositories(self.dataManager.get_client())
         repo_list = []
         for repo in repos:
             repo_list.append(repo["Name"])
@@ -60,7 +58,7 @@ class RepositoryTab(QWidget):
             return
         if currentRepo not in self.repoDictionnary.keys():
             print(currentRepo)
-            self.repoDictionnary[currentRepo] = sorted(Publish._get_packages(self.client, "repos", currentRepo))
+            self.repoDictionnary[currentRepo] = sorted(Publish._get_packages(self.dataManager.get_client(), "repos", currentRepo))
 
         if self.repoDictionnary[currentRepo]:
             for package in self.repoDictionnary[currentRepo]:
@@ -82,7 +80,7 @@ class RepositoryTab(QWidget):
             else:
                 self.repoDictionnary[repoName].append(currentItem.text())
         print(packageList)
-        self.client.do_delete('/repos/%s/packages' % repoName, data={'PackageRefs': packageList})
+        self.dataManager.get_client().do_delete('/repos/%s/packages' % repoName, data={'PackageRefs': packageList})
         self.updateList()
 
     def createMinimalSnapshot(self):

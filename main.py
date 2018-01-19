@@ -10,24 +10,32 @@ from SnapshotTab import SnapshotTab
 from RepositoryTab import RepositoryTab
 from package_promotion import PackagePromotion
 from component_promotion import ComponentPromotion
+from data_manager import DataManager
 
 class Window(QWidget):
+
+
     def __init__(self, parent=None):
         super(Window, self).__init__(parent)
         self.setWindowTitle("python-aptly GUI")
+
+        dataManager = DataManager()
+        dataManager.create_client("http://127.0.0.1:8089")
+
         layout = QGridLayout()
-        tabs = QTabWidget()
-        tabs.addTab(SnapshotTab(), "Snapshot management")
-        tabs.addTab(RepositoryTab(), "Repository management")
-        tabs.addTab(PackagePromotion(), "Package Promotion")
-        tabs.addTab(ComponentPromotion(), "Component Promotion")
+        self.tabs = QTabWidget()
+        self.tabs.addTab(SnapshotTab(dataManager), "Snapshot management")
+        self.tabs.addTab(RepositoryTab(dataManager), "Repository management")
+        self.tabs.addTab(PackagePromotion(dataManager), "Package Promotion")
+        self.tabs.addTab(ComponentPromotion(dataManager), "Component Promotion")
 
         self.setLayout(layout)
-        layout.addWidget(tabs)
-        tabs.currentChanged.connect(self.foo)
+        layout.addWidget(self.tabs)
+        self.tabs.currentChanged.connect(self.foo)
 
     def foo(self, item):
-        print(item)
+        t = self.tabs.currentWidget()
+        print(type(t))
 
 if __name__ == '__main__':
     import sys

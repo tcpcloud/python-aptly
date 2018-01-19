@@ -12,8 +12,10 @@ from aptly.client import Aptly
 
 
 class PackagePromotion(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, dataManager,parent=None):
         super(PackagePromotion, self).__init__(parent)
+
+        self.dataManager = dataManager
 
         # initialize widgets
         self.componentBox = QComboBox()
@@ -38,7 +40,6 @@ class PackagePromotion(QWidget):
 
         # initialize data
         self.model = QStandardItemModel(self.packageLabel)
-        self.client = self.createClient()
         self.publishDic = self.preLoadPublishes()
         self.fillPublishBox()
         self.recreatePackageBox()
@@ -47,23 +48,19 @@ class PackagePromotion(QWidget):
         self.componentBox.currentIndexChanged.connect(self.recreatePackageBox)
         self.publishButton.clicked.connect(self.updatePublish)
 
-
-    def createClient(self):
-        return Aptly("http://127.0.0.1:8089", dry=False, timeout=600)
-
     def preLoadPublishes(self):
         publishList = {}
-        publishes = self.client.do_get('/publish')
+        publishes = self.dataManager.get_client().do_get('/publish')
         for publish in publishes:
             name = "{}{}{}".format(publish['Storage'] + ":" if publish['Storage']
                                    else "", publish['Prefix'] + "/" if
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
-            publishList[name] = Publish(self.client, name, load=False, storage=publish.get('Storage', "local"))
+            publishList[name] = Publish(self.dataManager.get_client(), name, load=False, storage=publish.get('Storage', "local"))
         return publishList
 
     def loadSnapshot(self, name):
-        return Publish.get_packages(self.client, "snapshots", name)
+        return Publish.get_packages(self.dataManager.get_client(), "snapshots", name)
 
     def updatePublish(self):
         targetPublish = self.publishDic[self.targetPublishBox.currentText()]
@@ -79,7 +76,7 @@ class PackagePromotion(QWidget):
         oldSnapshotName = targetPublish.components[component][0]
         st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
         newSnapshotName = "{}-{}-{}".format(oldSnapshotName, "merged-gui", st)
-        old_packages = targetPublish._get_packages(self.client, "snapshots", oldSnapshotName)
+        old_packages = targetPublish._get_packages(self.dataManager.get_client(), "snapshots", oldSnapshotName)
         for package in old_packages:
             packageList.add(package)
         print(packageList)
@@ -118,7 +115,7 @@ class PackagePromotion(QWidget):
         if not component:
             return
 
-        packages = sorted(currentPublish._get_packages(self.client, "snapshots", currentPublish.components[component][0]))
+        packages = sorted(currentPublish._get_packages(self.dataManager.get_client(), "snapshots", currentPublish.components[component][0]))
 
         for package in packages:
             item = QStandardItem(package)

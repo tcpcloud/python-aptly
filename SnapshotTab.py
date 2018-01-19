@@ -11,7 +11,8 @@ from aptly.client import Aptly
 
 
 class SnapshotTab(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, dataManager,parent=None):
+        self.dataManager = dataManager
         super(SnapshotTab, self).__init__(parent)
 
         # initialize widgets
@@ -33,7 +34,6 @@ class SnapshotTab(QWidget):
 
         # initialize datas
         self.model = QStandardItemModel(self.packageLabel)
-        self.client = self.createClient()
         self.publishDic = self.preLoadPublishes()
         self.fillPublishBox()
         self.recreatePackageBox()
@@ -42,22 +42,19 @@ class SnapshotTab(QWidget):
         self.componentBox.currentIndexChanged.connect(self.recreatePackageBox)
         self.publishButton.clicked.connect(self.updatePublish)
 
-    def createClient(self):
-        return Aptly("http://127.0.0.1:8089", dry=False, timeout=600)
-
     def preLoadPublishes(self):
         publishList = {}
-        publishes = self.client.do_get('/publish')
+        publishes = self.dataManager.get_client().do_get('/publish')
         for publish in publishes:
             name = "{}{}{}".format(publish['Storage'] + ":" if publish['Storage']
                                    else "", publish['Prefix'] + "/" if
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
-            publishList[name] = Publish(self.client, name, load=False, storage=publish.get('Storage', "local"))
+            publishList[name] = Publish(self.dataManager.get_client(), name, load=False, storage=publish.get('Storage', "local"))
         return publishList
 
     def loadSnapshot(self, name):
-        return Publish._get_packages(self.client, "snapshots", name)
+        return Publish._get_packages(self.dataManager.get_client(), "snapshots", name)
 
     def updatePublish(self):
         # check if deep copy of shallow copy
@@ -106,7 +103,7 @@ class SnapshotTab(QWidget):
         if not component:
             return
 
-        packages = sorted(currentPublish._get_packages(self.client, "snapshots", currentPublish.components[component][0]))
+        packages = sorted(currentPublish._get_packages(self.dataManager.get_client(), "snapshots", currentPublish.components[component][0]))
 
         for package in packages:
             item = QStandardItem(package)

@@ -12,9 +12,10 @@ from aptly.client import Aptly
 
 
 class ComponentPromotion(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, dataManager,parent=None):
         super(ComponentPromotion, self).__init__(parent)
 
+        self.dataManager = dataManager
         # initialize widgets
         self.componentLabel = QLabel("List of components")
         self.sourcePublishBox = QComboBox()
@@ -37,7 +38,6 @@ class ComponentPromotion(QWidget):
 
         # initialize data
         self.model = QStandardItemModel(self.packageLabel)
-        self.client = self.createClient()
         self.publishDic = self.preLoadPublishes()
         self.fillPublishBox()
         self.recreatePackageBox()
@@ -46,22 +46,19 @@ class ComponentPromotion(QWidget):
         self.publishButton.clicked.connect(self.updatePublish)
 
 
-    def createClient(self):
-        return Aptly("http://127.0.0.1:8089", dry=False, timeout=600)
-
     def preLoadPublishes(self):
         publishList = {}
-        publishes = self.client.do_get('/publish')
+        publishes = self.dataManager.get_client().do_get('/publish')
         for publish in publishes:
             name = "{}{}{}".format(publish['Storage'] + ":" if publish['Storage']
                                    else "", publish['Prefix'] + "/" if
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
-            publishList[name] = Publish(self.client, name, load=False, storage=publish.get('Storage', "local"))
+            publishList[name] = Publish(self.dataManager.get_client(), name, load=False, storage=publish.get('Storage', "local"))
         return publishList
 
     def loadSnapshot(self, name):
-        return Publish.get_packages(self.client, "snapshots", name)
+        return Publish.get_packages(self.dataManager.get_client(), "snapshots", name)
 
     def updatePublish(self):
         targetPublish = self.publishDic[self.targetPublishBox.currentText()]
