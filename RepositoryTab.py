@@ -92,6 +92,8 @@ class RepositoryTab(QWidget):
         i = 100
 
     # TODO: disable buttons if no packages...
+    def reloadComponent(self):
+        return
 
 
 

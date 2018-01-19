@@ -51,15 +51,13 @@ class ComponentPromotion(QWidget):
         targetPublish = self.dataManager.get_publish(self.targetPublishBox.currentText())
         targetPublish.load()
 
-        # find a better way to get packages
         for index in reversed(range(self.model.rowCount())):
             currentItem = self.model.item(index)
             if currentItem and currentItem.checkState() != 0:
                 component = currentItem.text()
                 newSnapshot = self.dataManager.get_publish(self.sourcePublishBox.currentText()).components[component][0]
                 targetPublish.replace_snapshot(component, newSnapshot)
-
-        targetPublish.do_publish(recreate=False, merge_snapshots=False)
+        targetPublish.do_publish(merge_snapshots=False)
 
     def fillPublishBox(self):
         self.sourcePublishBox.clear()
