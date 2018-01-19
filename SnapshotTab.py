@@ -34,7 +34,6 @@ class SnapshotTab(QWidget):
 
         # initialize datas
         self.model = QStandardItemModel(self.packageLabel)
-        self.publishDic = self.preLoadPublishes()
         self.fillPublishBox()
         self.recreatePackageBox()
         # controllers
@@ -42,23 +41,13 @@ class SnapshotTab(QWidget):
         self.componentBox.currentIndexChanged.connect(self.recreatePackageBox)
         self.publishButton.clicked.connect(self.updatePublish)
 
-    def preLoadPublishes(self):
-        publishList = {}
-        publishes = self.dataManager.get_client().do_get('/publish')
-        for publish in publishes:
-            name = "{}{}{}".format(publish['Storage'] + ":" if publish['Storage']
-                                   else "", publish['Prefix'] + "/" if
-                                   publish['Prefix'] else "",
-                                   publish['Distribution'])
-            publishList[name] = Publish(self.dataManager.get_client(), name, load=False, storage=publish.get('Storage', "local"))
-        return publishList
-
     def loadSnapshot(self, name):
         return Publish._get_packages(self.dataManager.get_client(), "snapshots", name)
 
     def updatePublish(self):
         # check if deep copy of shallow copy
-        currentPublish = self.publishDic[self.publishBox.currentText()]
+        publish_name = self.publishBox.currentText()
+        currentPublish = self.dataManager.get_publish(publish_name)
         packageList = []
         # find a better way to get packages
         for index in reversed(range(self.model.rowCount())):
@@ -74,20 +63,17 @@ class SnapshotTab(QWidget):
         currentPublish.create_snapshots_from_packages(packageList, newSnapshotName, 'Snapshot created from GUI for component {}'.format(component))
         currentPublish.replace_snapshot(component, newSnapshotName)
         currentPublish.do_publish(recreate=False, merge_snapshots=False)
-        # TODO: check the dictionnary is also updated
-
 
     def fillPublishBox(self):
         self.publishBox.clear()
-        for publish in sorted(self.publishDic.keys()):
+        for publish in sorted(self.dataManager.get_publish_list()):
             self.publishBox.addItem(publish)
         self.publishBox.update()
-        # update snapshot box
         self.updateSnapshotBox()
 
     def updateSnapshotBox(self):
         name = self.publishBox.currentText()
-        currentPublish = self.publishDic[name]
+        currentPublish = self.dataManager.get_publish(name)
         currentPublish.load()
         self.componentBox.clear()
         for component in sorted(list(currentPublish.components.keys())):
@@ -97,13 +83,13 @@ class SnapshotTab(QWidget):
     def recreatePackageBox(self):
         self.model.removeRows(0, self.model.rowCount())
         component = self.componentBox.currentText()
-        currentPublish = self.publishDic[self.publishBox.currentText()]
+        currentPublish = self.publishBox.currentText()
 
         # empty sometimes?
         if not component:
             return
 
-        packages = sorted(currentPublish._get_packages(self.dataManager.get_client(), "snapshots", currentPublish.components[component][0]))
+        packages = self.dataManager.get_package_from_publish_component(currentPublish, component)
 
         for package in packages:
             item = QStandardItem(package)
@@ -111,4 +97,8 @@ class SnapshotTab(QWidget):
             item.setCheckState(Qt.Checked)
             self.model.appendRow(item)
         self.packageLabel.setModel(self.model)
+
+    def reloadComponent(self):
+        self.updateSnapshotBox()
+        self.recreatePackageBox()
 

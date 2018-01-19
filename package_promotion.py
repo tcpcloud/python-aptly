@@ -40,7 +40,6 @@ class PackagePromotion(QWidget):
 
         # initialize data
         self.model = QStandardItemModel(self.packageLabel)
-        self.publishDic = self.preLoadPublishes()
         self.fillPublishBox()
         self.recreatePackageBox()
         # controllers
@@ -48,22 +47,11 @@ class PackagePromotion(QWidget):
         self.componentBox.currentIndexChanged.connect(self.recreatePackageBox)
         self.publishButton.clicked.connect(self.updatePublish)
 
-    def preLoadPublishes(self):
-        publishList = {}
-        publishes = self.dataManager.get_client().do_get('/publish')
-        for publish in publishes:
-            name = "{}{}{}".format(publish['Storage'] + ":" if publish['Storage']
-                                   else "", publish['Prefix'] + "/" if
-                                   publish['Prefix'] else "",
-                                   publish['Distribution'])
-            publishList[name] = Publish(self.dataManager.get_client(), name, load=False, storage=publish.get('Storage', "local"))
-        return publishList
-
     def loadSnapshot(self, name):
         return Publish.get_packages(self.dataManager.get_client(), "snapshots", name)
 
     def updatePublish(self):
-        targetPublish = self.publishDic[self.targetPublishBox.currentText()]
+        targetPublish = self.dataManager.get_publish(self.targetPublishBox.currentText())
         targetPublish.load()
         packageList = set()
         # find a better way to get packages
@@ -89,7 +77,7 @@ class PackagePromotion(QWidget):
     def fillPublishBox(self):
         self.sourcePublishBox.clear()
         self.targetPublishBox.clear()
-        for publish in sorted(self.publishDic.keys()):
+        for publish in self.dataManager.get_publish_list():
             self.sourcePublishBox.addItem(publish)
             self.targetPublishBox.addItem(publish)
         self.sourcePublishBox.update()
@@ -99,7 +87,7 @@ class PackagePromotion(QWidget):
 
     def updateSnapshotBox(self):
         name = self.sourcePublishBox.currentText()
-        currentPublish = self.publishDic[name]
+        currentPublish = self.dataManager.get_publish(name)
         currentPublish.load()
         self.componentBox.clear()
         for component in sorted(list(currentPublish.components.keys())):
@@ -109,13 +97,13 @@ class PackagePromotion(QWidget):
     def recreatePackageBox(self):
         self.model.removeRows(0, self.model.rowCount())
         component = self.componentBox.currentText()
-        currentPublish = self.publishDic[self.sourcePublishBox.currentText()]
+        publish =self.sourcePublishBox.currentText()
 
         # empty sometimes?
         if not component:
             return
 
-        packages = sorted(currentPublish._get_packages(self.dataManager.get_client(), "snapshots", currentPublish.components[component][0]))
+        packages = self.dataManager.get_package_from_publish_component(publish, component)
 
         for package in packages:
             item = QStandardItem(package)
@@ -123,4 +111,7 @@ class PackagePromotion(QWidget):
             item.setCheckState(Qt.Checked)
             self.model.appendRow(item)
         self.packageLabel.setModel(self.model)
+
+    def reloadComponent(self):
+        self.updateSnapshotBox()
 

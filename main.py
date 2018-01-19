@@ -21,6 +21,7 @@ class Window(QWidget):
 
         dataManager = DataManager()
         dataManager.create_client("http://127.0.0.1:8089")
+        dataManager.preLoadPublishes()
 
         layout = QGridLayout()
         self.tabs = QTabWidget()
@@ -35,7 +36,7 @@ class Window(QWidget):
 
     def foo(self, item):
         t = self.tabs.currentWidget()
-        print(type(t))
+        t.reloadComponent()
 
 if __name__ == '__main__':
     import sys
