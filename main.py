@@ -22,10 +22,12 @@ class Window(QWidget):
         tabs.addTab(PackagePromotion(), "Package Promotion")
         tabs.addTab(ComponentPromotion(), "Component Promotion")
 
-
         self.setLayout(layout)
         layout.addWidget(tabs)
+        tabs.currentChanged.connect(self.foo)
 
+    def foo(self, item):
+        print(item)
 
 if __name__ == '__main__':
     import sys

@@ -42,7 +42,6 @@ class SnapshotTab(QWidget):
         self.componentBox.currentIndexChanged.connect(self.recreatePackageBox)
         self.publishButton.clicked.connect(self.updatePublish)
 
-
     def createClient(self):
         return Aptly("http://127.0.0.1:8089", dry=False, timeout=600)
 
@@ -58,7 +57,7 @@ class SnapshotTab(QWidget):
         return publishList
 
     def loadSnapshot(self, name):
-        return Publish.get_packages(self.client, "snapshots", name)
+        return Publish._get_packages(self.client, "snapshots", name)
 
     def updatePublish(self):
         # check if deep copy of shallow copy
