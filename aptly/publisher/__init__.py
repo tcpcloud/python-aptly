@@ -282,6 +282,33 @@ class Publish(object):
 
         return (diff, equal)
 
+    def replace_snapshot(self, component, new_snapshot):
+        newlist = []
+        if component in self.components.keys():
+            for snapshot in self.publish_snapshots:
+                if snapshot["Name"] not in self.components[component] and snapshot not in newlist:
+                    newlist.append(snapshot)
+        else:
+            newlist = self.publish_snapshots
+        newlist.append({
+            'Component': component,
+            'Name': new_snapshot
+        })
+
+        self.components[component] = [new_snapshot]
+        self.publish_snapshots = newlist
+
+    def create_snapshot_from_packages(self, packages, name, description):
+        self.client.do_post(
+            '/snapshots',
+            data={
+                'Name': name,
+                'SourceSnapshots': [],
+                'Description': description,
+                'PackageRefs': packages,
+            }
+        )
+
     @staticmethod
     @CachedMethod
     def _get_packages(client, source_type, source_name):
