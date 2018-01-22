@@ -2,6 +2,12 @@
 
 from aptly.client import Aptly
 from aptly.publisher import Publish
+from PyQt5.QtCore import (pyqtSignal, QDataStream, QMutex, QMutexLocker,
+        QThread, QWaitCondition)
+
+#TO REMOVE
+import time
+
 
 class DataManager:
     def __init__(self):
@@ -27,7 +33,7 @@ class DataManager:
         return self.publishDict
 
     def get_publish_list(self):
-        return self.publish_dict.keys()
+        return sorted(self.publish_dict.keys())
 
     def get_publish(self, name):
         self.publish_dict[name].load()

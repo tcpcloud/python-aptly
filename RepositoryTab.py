@@ -57,7 +57,6 @@ class RepositoryTab(QWidget):
         if currentRepo == "":
             return
         if currentRepo not in self.repoDictionnary.keys():
-            print(currentRepo)
             self.repoDictionnary[currentRepo] = sorted(Publish._get_packages(self.dataManager.get_client(), "repos", currentRepo))
 
         if self.repoDictionnary[currentRepo]:
