@@ -39,7 +39,6 @@ class ComponentPromotion(QWidget):
         # initialize data
         self.model = QStandardItemModel(self.packageLabel)
         self.fillPublishBox()
-        self.recreatePackageBox()
         # controllers
         self.sourcePublishBox.currentIndexChanged.connect(self.recreatePackageBox)
         self.publishButton.clicked.connect(self.updatePublish)
@@ -62,11 +61,14 @@ class ComponentPromotion(QWidget):
     def fillPublishBox(self):
         self.sourcePublishBox.clear()
         self.targetPublishBox.clear()
-        for publish in self.dataManager.get_publish_list():
+        publishes = self.dataManager.get_publish_list()
+        for publish in publishes:
             self.sourcePublishBox.addItem(publish)
             self.targetPublishBox.addItem(publish)
         self.sourcePublishBox.update()
         self.targetPublishBox.update()
+        if len(publishes) > 0:
+            self.recreatePackageBox()
 
     def recreatePackageBox(self):
         self.model.removeRows(0, self.model.rowCount())
@@ -82,5 +84,5 @@ class ComponentPromotion(QWidget):
         self.packageLabel.setModel(self.model)
 
     def reloadComponent(self):
-        self.recreatePackageBox()
-        return
+        if len(self.dataManager.get_publish_list()) > 0:
+            self.recreatePackageBox()

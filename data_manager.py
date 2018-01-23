@@ -7,7 +7,7 @@ from PyQt5.QtCore import (pyqtSignal, QDataStream, QMutex, QMutexLocker,
 
 #TO REMOVE
 import time
-
+import datetime
 
 class DataManager:
     def __init__(self):
@@ -35,6 +35,8 @@ class DataManager:
 
         return sorted(Publish._get_packages(self.client, "snapshots", snapshot))
 
-    def generate_snapshot_name(self, old_snapshot):
-        return ""
+    @staticmethod
+    def generate_snapshot_name(old_snapshot):
+        st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+        return "{}-{}-{}".format(old_snapshot, "merged-gui", st)
 

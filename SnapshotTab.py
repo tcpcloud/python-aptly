@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
 
 from aptly.publisher import Publish, PublishManager
 from aptly.client import Aptly
-
+from data_manager import DataManager
 
 class SnapshotTab(QWidget):
     def __init__(self, dataManager,parent=None):
@@ -45,31 +45,30 @@ class SnapshotTab(QWidget):
         return Publish._get_packages(self.dataManager.get_client(), "snapshots", name)
 
     def updatePublish(self):
-        # check if deep copy of shallow copy
         publish_name = self.publishBox.currentText()
         currentPublish = self.dataManager.get_publish(publish_name)
         packageList = []
-        # find a better way to get packages
         for index in reversed(range(self.model.rowCount())):
             currentItem = self.model.item(index)
             if currentItem and currentItem.checkState() != 0:
                 packageList.append(currentItem.text())
-                # WE NEED TO RELOAD PUBLISH FOR REAL TO NOT PUBLISH SHIT?
 
         # TODO: create function for snapshot name?
         component = self.componentBox.currentText()
         oldSnapshotName = currentPublish.components[component][0]
-        newSnapshotName = "{}-{}".format(oldSnapshotName, "gui")
+        newSnapshotName = DataManager.generate_snapshot_name(oldSnapshotName)
         currentPublish.create_snapshots_from_packages(packageList, newSnapshotName, 'Snapshot created from GUI for component {}'.format(component))
         currentPublish.replace_snapshot(component, newSnapshotName)
         currentPublish.do_publish(recreate=False, merge_snapshots=False)
 
     def fillPublishBox(self):
         self.publishBox.clear()
-        for publish in sorted(self.dataManager.get_publish_list()):
+        publishes = self.dataManager.get_publish_list()
+        for publish in publishes:
             self.publishBox.addItem(publish)
-        self.publishBox.update()
-        self.updateSnapshotBox()
+        if len(publishes) > 0:
+            self.publishBox.update()
+            self.updateSnapshotBox()
 
     def updateSnapshotBox(self):
         name = self.publishBox.currentText()
@@ -99,6 +98,7 @@ class SnapshotTab(QWidget):
         self.packageLabel.setModel(self.model)
 
     def reloadComponent(self):
-        self.updateSnapshotBox()
-        self.recreatePackageBox()
+        if len(self.dataManager.get_publish_list()) > 0:
+            self.updateSnapshotBox()
+            self.recreatePackageBox()
 

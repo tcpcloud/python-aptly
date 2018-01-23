@@ -4,7 +4,7 @@ from PyQt5.QtCore import QStringListModel, Qt, QThread
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
                              QGridLayout, QLabel, QLineEdit, QMenuBar, QPushButton, QTextEdit, QWidget, QMainWindow,
-                             QListView, QAbstractItemView, QAction, QTabWidget, QBoxLayout, QProgressBar, QDialog)
+                             QListView, QAbstractItemView, QAction, QTabWidget, QBoxLayout, QProgressBar, QDialog, QScrollArea, QSizePolicy)
 
 from SnapshotTab import SnapshotTab
 from RepositoryTab import RepositoryTab
@@ -60,19 +60,23 @@ class DataThread(QThread):
     def run(self):
         publish_dict = {}
 
-        publishes = self.client.do_get('/publish')
+        try:
+            publishes = self.client.do_get('/publish')
+        except Exception as e:
+            self.label.setText(e)
+            self.terminate()
+
         i = 0
         nbMax = len(publishes)
 
         for publish in publishes:
             i += 1
-
             name = "{}{}{}".format(publish['Storage'] + ":" if publish['Storage']
                                    else "", publish['Prefix'] + "/" if
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
             self.progressDialog.setValue(i / nbMax * 100)
-            self.label.setText("Loading {}".format(name))
+            #self.label.setText("Loading {}".format(name))
             tmp = Publish(self.client, name, load=True, storage=publish.get('Storage', "local"))
             publish_dict[name] = tmp
 
@@ -100,10 +104,18 @@ class SplashScreen(QDialog):
             self.close()
 
     def loadPublishConnector(self):
-        if self.url != self.urlEdit.text():
-            self.progressBar.setValue(0)
-        self.url = self.urlEdit.text()
-        self.dataManager.create_client(self.url)
+        self.infoLabel.setText("Initializing connection")
+        self.infoScroll.setWidget(self.infoLabel)
+        self.progressBar.setValue(0)
+        try:
+            self.dataManager.create_client(self.url)
+        except Exception as e:
+            print(repr(e))
+            self.infoLabel.setText(repr(e))
+            self.infoScroll.setWidget(self.infoLabel)
+
+            return
+
         self.dataThread = DataThread(self.dataManager, self.progressBar, self.infoLabel)
         self.dataThread.start()
         self.loadButton.disconnect()
@@ -124,32 +136,36 @@ class SplashScreen(QDialog):
         self.urlLabel = QLabel("URL of Aptly :")
         self.urlEdit = QLineEdit("http://127.0.0.1:8089")
         self.loadButton = QPushButton("Connect to aptly")
+        self.quitButton = QPushButton("Quit")
         self.dataManager = DataManager()
         self.infoLabel = QLabel("")
+        self.infoScroll = QScrollArea()
         self.url = ""
+
+
         self.setupUI()
 
     def setupUI(self):
         self.setWindowTitle("python-aptly GUI")
+        self.setFixedSize(600, 200)
+        self.setVisible(True)
+        self.setLayout(self.layout)
 
-        self.setFixedSize(600, 150)
         self.progressBar.setVisible(True)
         self.progressBar.setMaximum(100)
         self.progressBar.setValue(0)
-        self.setVisible(True)
+
+        #self.infoScroll.setFixedHeight(35)
 
         self.layout.addWidget(self.urlLabel)
         self.layout.addWidget(self.urlEdit)
         self.layout.addWidget(self.loadButton)
         self.layout.addWidget(self.progressBar)
-
-        self.setLayout(self.layout)
+        self.layout.addWidget(self.infoScroll)
+        self.layout.addWidget(self.quitButton)
 
         self.loadButton.clicked.connect(self.loadPublishConnector)
-
-
-
-
+        self.quitButton.clicked.connect(self.close)
 
 if __name__ == '__main__':
     import sys

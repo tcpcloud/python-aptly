@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
 
 from aptly.publisher import Publish, PublishManager
 from aptly.client import Aptly
+from data_manager import DataManager
 
 
 class PackagePromotion(QWidget):
@@ -63,7 +64,8 @@ class PackagePromotion(QWidget):
         component = self.componentBox.currentText()
         oldSnapshotName = targetPublish.components[component][0]
         st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-        newSnapshotName = "{}-{}-{}".format(oldSnapshotName, "merged-gui", st)
+        newSnapshotName = DataManager.generate_snapshot_name(oldSnapshotName)
+
         old_packages = targetPublish._get_packages(self.dataManager.get_client(), "snapshots", oldSnapshotName)
         for package in old_packages:
             packageList.add(package)
@@ -76,13 +78,15 @@ class PackagePromotion(QWidget):
     def fillPublishBox(self):
         self.sourcePublishBox.clear()
         self.targetPublishBox.clear()
-        for publish in self.dataManager.get_publish_list():
+        publishes = self.dataManager.get_publish_list()
+        for publish in publishes:
             self.sourcePublishBox.addItem(publish)
             self.targetPublishBox.addItem(publish)
         self.sourcePublishBox.update()
         self.targetPublishBox.update()
         # update snapshot box
-        self.updateSnapshotBox()
+        if len(publishes) > 0:
+            self.updateSnapshotBox()
 
     def updateSnapshotBox(self):
         name = self.sourcePublishBox.currentText()
@@ -112,5 +116,6 @@ class PackagePromotion(QWidget):
         self.packageLabel.setModel(self.model)
 
     def reloadComponent(self):
-        self.updateSnapshotBox()
+        if len(self.dataManager.get_publish_list()) > 0:
+            self.updateSnapshotBox()
 
