@@ -67,7 +67,6 @@ class PackagePromotion(QWidget):
         old_packages = targetPublish._get_packages(self.dataManager.get_client(), "snapshots", oldSnapshotName)
         for package in old_packages:
             packageList.add(package)
-        print(packageList)
 
         targetPublish.create_snapshots_from_packages(list(packageList), newSnapshotName, 'Snapshot created from GUI for component {}'.format(component))
         targetPublish.replace_snapshot(component, newSnapshotName)

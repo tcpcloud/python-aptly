@@ -55,14 +55,14 @@ class DataThread(QThread):
         self.dataManager = dataManager
         self.progressDialog = bar
         self.label = label
-
+        self.cancelled = False
 
     def run(self):
         publish_dict = {}
+
         publishes = self.client.do_get('/publish')
         i = 0
         nbMax = len(publishes)
-        self.progressDialog.setValue(0)
 
         for publish in publishes:
             i += 1
@@ -78,9 +78,13 @@ class DataThread(QThread):
 
             for snapshot in tmp.publish_snapshots:
                 try:
+                    if self.cancelled:
+                        self.terminate()
                     Publish._get_packages(self.client, "snapshots", snapshot["Name"])
                 except Exception as e:
                     print("Failed to fetch snapshot")
+            if self.cancelled:
+                self.terminate()
 
         self.label.setText("Successfully loaded publishes")
         self.dataManager.publish_dict = publish_dict
@@ -88,38 +92,62 @@ class DataThread(QThread):
 
 class SplashScreen(QDialog):
 
-    def loadPublishConnector(self):
-        dataThread = DataThread(self.dataManager, self.progress, self.label)
-        dataThread.run()
+    def loadMainWindow(self):
+        if not self.dataThread.cancelled:
+            self.setModal(False)
+            self.window = Window(self.dataManager)
+            self.window.show()
+            self.close()
 
-        self.setModal(False)
-        self.window = Window(self.dataManager)
-        self.window.show()
-        self.close()
+    def loadPublishConnector(self):
+        if self.url != self.urlEdit.text():
+            self.progressBar.setValue(0)
+        self.url = self.urlEdit.text()
+        self.dataManager.create_client(self.url)
+        self.dataThread = DataThread(self.dataManager, self.progressBar, self.infoLabel)
+        self.dataThread.start()
+        self.loadButton.disconnect()
+        self.loadButton.setText("Cancel")
+        self.loadButton.clicked.connect(self.abortLoad)
+        self.dataThread.finished.connect(self.loadMainWindow)
+
+    def abortLoad(self):
+        self.dataThread.cancelled = True
+        self.loadButton.setText("Load publish")
+        self.loadButton.disconnect()
+        self.loadButton.clicked.connect(self.loadPublishConnector)
 
     def __init__(self):
-        dataManager = DataManager()
-        dataManager.create_client("http://127.0.0.1:8089")
-        #dataManager.create_client("http://apt.mirantis.net:8084")
         super(SplashScreen, self).__init__()
+        self.layout = QGridLayout()
+        self.progressBar = QProgressBar(self)
+        self.urlLabel = QLabel("URL of Aptly :")
+        self.urlEdit = QLineEdit("http://127.0.0.1:8089")
+        self.loadButton = QPushButton("Connect to aptly")
+        self.dataManager = DataManager()
+        self.infoLabel = QLabel("")
+        self.url = ""
+        self.setupUI()
+
+    def setupUI(self):
         self.setWindowTitle("python-aptly GUI")
-        layout = QGridLayout()
-        loadButton = QPushButton("Load publishes")
-        self.label = QLabel("")
-        progress = QProgressBar(self)
-        layout.addWidget(loadButton)
-        layout.addWidget(progress)
-        layout.addWidget(self.label)
-        progress.setVisible(True)
-        progress.setMaximum(100)
-        progress.setValue(0)
-        self.setLayout(layout)
+
+        self.setFixedSize(600, 150)
+        self.progressBar.setVisible(True)
+        self.progressBar.setMaximum(100)
+        self.progressBar.setValue(0)
         self.setVisible(True)
-        self.progress = progress
-        self.client = dataManager.client
-        self.dataManager = dataManager
-        self.setFixedSize(600,150)
-        loadButton.clicked.connect(self.loadPublishConnector)
+
+        self.layout.addWidget(self.urlLabel)
+        self.layout.addWidget(self.urlEdit)
+        self.layout.addWidget(self.loadButton)
+        self.layout.addWidget(self.progressBar)
+
+        self.setLayout(self.layout)
+
+        self.loadButton.clicked.connect(self.loadPublishConnector)
+
+
 
 
 
