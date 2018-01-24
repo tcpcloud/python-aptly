@@ -2,16 +2,17 @@
 
 from PyQt5.QtCore import QThread
 from aptly.publisher import Publish
+from PyQt5.QtCore import pyqtSignal
 
 
 class DataThread(QThread):
+    log = pyqtSignal(str, str)
 
-    def __init__(self, dataManager, bar, label):
+    def __init__(self, dataManager, bar):
         super(DataThread, self).__init__()
         self.client = dataManager.client
         self.data_manager = dataManager
         self.progress_dialog = bar
-        self.label = label
         self.cancelled = False
 
     def run(self):
@@ -20,7 +21,7 @@ class DataThread(QThread):
         try:
             publishes = self.client.do_get('/publish')
         except Exception as e:
-            self.label.setText(e)
+            self.log.emit(e, "error")
             self.terminate()
 
         i = 0
@@ -35,6 +36,7 @@ class DataThread(QThread):
                                    publish['Distribution'])
 
             self.progress_dialog.setValue(i / nb_max * 100)
+            self.log.emit("Loading publish {0}".format(name), "info")
 
             tmp = Publish(self.client, name, load=True,
                           storage=publish.get('Storage', "local"))
@@ -44,13 +46,14 @@ class DataThread(QThread):
                 try:
                     if self.cancelled:
                         self.terminate()
+                    self.log.emit("Loading snapshot {0} of publish {1}".format(snapshot["Name"], name), "debug")
                     Publish._get_packages(self.client, "snapshots", snapshot["Name"])
                 except Exception as e:
-                    print("Failed to fetch snapshot")
+                    self.log.emit("Failed to fetch snapshot {0}: {1}".format(snapshot["Name"], e), "error")
             if self.cancelled:
                 self.terminate()
 
-        self.label.setText("Successfully loaded publishes")
+        self.log.emit("Successfully loaded publishes", "success")
         self.data_manager.publish_dict = publish_dict
 
 
