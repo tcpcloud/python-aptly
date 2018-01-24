@@ -47,28 +47,6 @@ class PackagePromotion(QWidget):
     def load_snapshot(self, name):
         return Publish.get_packages(self.data_manager.get_client(), "snapshots", name)
 
-    def update_publish_old(self):
-        target_publish = self.data_manager.get_publish(self.target_publish_box.currentText())
-        target_publish.load()
-        package_list = set()
-        # find a better way to get packages
-        for index in reversed(range(self.model.rowCount())):
-            current_item = self.model.item(index)
-            if current_item and current_item.checkState() != 0:
-                package_list.add(current_item.text())
-
-        component = self.component_box.currentText()
-        old_snapshot_name = target_publish.components[component][0]
-        new_snapshot_name = DataManager.generate_snapshot_name(old_snapshot_name)
-
-        old_packages = target_publish._get_packages(self.data_manager.get_client(), "snapshots", old_snapshot_name)
-        for package in old_packages:
-            package_list.add(package)
-
-        target_publish.create_snapshots_from_packages(list(package_list), new_snapshot_name, 'Snapshot created from GUI for component {}'.format(component))
-        target_publish.replace_snapshot(component, new_snapshot_name)
-        target_publish.do_publish(recreate=False, merge_snapshots=False)
-
     def update_publish(self):
         target_publish_name = self.target_publish_box.currentText()
         component = self.component_box.currentText()
