@@ -14,7 +14,7 @@ setup(
     author_email="ced.hnyda@gmail.com",
     url='https://github.com/chnyda/python-aptly-gui',
     license='GPLv2',
-    packages=['aptlygui', 'aptlygui.model', 'aptlygui.views', 'aptlygui.workers'],
+    packages=['aptlygui', 'aptlygui.model', 'aptlygui.views', 'aptlygui.workers', 'aptgui.widgets'],
     install_requires=[
         'requests>=0.14',
         'pyqt5',

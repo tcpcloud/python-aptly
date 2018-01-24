@@ -7,12 +7,12 @@ from PyQt5.QtCore import pyqtSignal
 
 class DataThread(QThread):
     log = pyqtSignal(str, str)
+    progress = pyqtSignal(int)
 
-    def __init__(self, dataManager, bar):
+    def __init__(self, dataManager):
         super(DataThread, self).__init__()
         self.client = dataManager.client
         self.data_manager = dataManager
-        self.progress_dialog = bar
         self.cancelled = False
 
     def run(self):
@@ -35,7 +35,7 @@ class DataThread(QThread):
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
 
-            self.progress_dialog.setValue(i / nb_max * 100)
+            self.progress.emit(i / nb_max * 100)
             self.log.emit("Loading publish {0}".format(name), "info")
 
             tmp = Publish(self.client, name, load=True,
@@ -58,16 +58,19 @@ class DataThread(QThread):
 
 
 class AptlyThread(QThread):
-    def __init__(self, publish_name, progress_bar, data_manager):
+    log = pyqtSignal(str, str)
+    progress = pyqtSignal(int)
+
+    def __init__(self, publish_name, data_manager):
         super(AptlyThread, self).__init__()
         self.publish = data_manager.get_publish(publish_name)
-        self.progress_bar = progress_bar
         self.data_manager = data_manager
 
 
 class PublishThread(AptlyThread):
-    def __init__(self, publish_name, progress_bar, data_manager, **kwargs):
-        super(PublishThread, self).__init__(publish_name, progress_bar, data_manager)
+    def __init__(self, publish_name, data_manager, **kwargs):
+        super(PublishThread, self).__init__(publish_name, data_manager)
+        self.publish_name = publish_name
         self.package_list = kwargs.pop('package_list')
         self.component = kwargs.pop('component')
         merge = kwargs.pop('merge', False)
@@ -80,31 +83,33 @@ class PublishThread(AptlyThread):
             self.package_list = list(set(self.package_list))
 
     def run(self):
-
+        self.log.emit("Publishing {0}".format(self.publish_name), "info")
         try:
             if self.package_list:
                 self.publish.create_snapshot_from_packages(self.package_list, self.new_snapshot, 'Snapshot created from GUI for component {}'.format(self.component))
                 self.publish.replace_snapshot(self.component, self.new_snapshot)
-                self.progress_bar.setValue(50)
+                self.progress.emit(50)
         except Exception as e:
             # TODO: Add label?
-            print(repr(e))
-            self.progress_bar.setValue(0)
+            self.log.emit(repr(e), "error")
+            self.progress.emit(0)
             self.publish.replace_snapshot(self.component, self.old_snapshot)
 
         self.publish.do_publish(merge_snapshots=False)
-        self.progress_bar.setValue(100)
+        self.progress.emit(100)
 
 
 class PublishComponentThread(AptlyThread):
-    def __init__(self, publish_name, progress_bar, data_manager, **kwargs):
-        super(PublishComponentThread, self).__init__(publish_name, progress_bar, data_manager)
+    def __init__(self, publish_name, data_manager, **kwargs):
+        super(PublishComponentThread, self).__init__(publish_name, data_manager)
+        self.publish_name = publish_name
         self.source_publish = kwargs.pop('source_publish')
         self.components = kwargs.pop('components')
         self.source_publish = data_manager.get_publish(self.source_publish)
 
     def run(self):
+        self.log.emit("Publishing {0}, components {1}".format(self.publish_name, self.components), "info")
         for component in self.components:
             self.publish.replace_snapshot(component, self.source_publish.get_component_snapshot(component))
         self.publish.do_publish(merge_snapshots=False)
-        self.progress_bar.setValue(100)
+        self.progress.emit(100)
