@@ -12,73 +12,74 @@ from aptly.client import Aptly
 
 class RepositoryTab(QWidget):
 
-    def __init__(self, dataManager,parent=None):
+    def __init__(self, data_manager, parent=None):
         super(RepositoryTab, self).__init__(parent)
 
-        self.dataManager = dataManager
+        self.data_manager = data_manager
         # initialize widgets
-        self.repoBox = QComboBox()
-        self.deleteButton = QPushButton("Delete")
-        self.packageLabel = QListView()
-        self.packageLabel.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.repo_box = QComboBox()
+        self.delete_button = QPushButton("Delete")
+        self.package_label = QListView()
+        self.package_label.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         # place widget in the layout
         layout = QGridLayout()
-        layout.addWidget(self.repoBox, 0, 0, 1, 1)
-        layout.addWidget(self.deleteButton, 0, 1, 1, 1)
-        layout.addWidget(self.packageLabel, 1, 1, 2, 1)
+        layout.addWidget(self.repo_box, 0, 0, 1, 1)
+        layout.addWidget(self.delete_button, 0, 1, 1, 1)
+        layout.addWidget(self.package_label, 1, 1, 2, 1)
         self.setLayout(layout)
 
-        # initialize datas
-        self.model = QStandardItemModel(self.packageLabel)
-        self.repoDictionnary = {}
+        # initialize data
+        self.model = QStandardItemModel(self.package_label)
+        self.repo_dictionary = {}
         # controllers
-        self.loadRepository()
-        self.repoBox.currentIndexChanged.connect(self.updateList)
-        self.deleteButton.clicked.connect(self.removePackage)
+        self.load_repository()
+        self.repo_box.currentIndexChanged.connect(self.update_list)
+        self.delete_button.clicked.connect(self.remove_package)
 
-    def loadRepository(self):
-        repos = Publish._get_repositories(self.dataManager.get_client())
+    def load_repository(self):
+        repos = Publish._get_repositories(self.data_manager.get_client())
         repo_list = []
         for repo in repos:
             repo_list.append(repo["Name"])
         for repo in sorted(repo_list):
-            self.repoBox.addItem(repo)
-        self.repoBox.update()
-        self.updateList()
+            self.repo_box.addItem(repo)
+        self.repo_box.update()
+        self.update_list()
 
-    def updateList(self):
+    def update_list(self):
         self.model.removeRows(0, self.model.rowCount())
-        currentRepo = self.repoBox.currentText()
-        if currentRepo == "":
+        current_repo = self.repo_box.currentText()
+        if current_repo == "":
             return
-        if currentRepo not in self.repoDictionnary.keys():
-            self.repoDictionnary[currentRepo] = sorted(Publish._get_packages(self.dataManager.get_client(), "repos", currentRepo))
+        if current_repo not in self.repo_dictionary.keys():
+            self.repo_dictionary[current_repo] = sorted(Publish._get_packages(self.data_manager.get_client(), "repos",
+                                                                              current_repo))
 
-        if self.repoDictionnary[currentRepo]:
-            for package in self.repoDictionnary[currentRepo]:
+        if self.repo_dictionary[current_repo]:
+            for package in self.repo_dictionary[current_repo]:
                 item = QStandardItem(package)
                 item.setCheckable(True)
                 item.setCheckState(Qt.Unchecked)
                 self.model.appendRow(item)
-            self.packageLabel.setModel(self.model)
+            self.package_label.setModel(self.model)
 
-    def removePackage(self):
-        packageList = []
-        repoName = self.repoBox.currentText()
-        self.repoDictionnary[repoName] = []
+    def remove_package(self):
+        package_list = []
+        repo_name = self.repo_box.currentText()
+        self.repo_dictionary[repo_name] = []
         for index in range(self.model.rowCount()):
-            currentItem = self.model.item(index)
-            if currentItem and currentItem.checkState() != 0:
-                packageList.append(currentItem.text())
+            current_item = self.model.item(index)
+            if current_item and current_item.checkState() != 0:
+                package_list.append(current_item.text())
             else:
-                self.repoDictionnary[repoName].append(currentItem.text())
-        print(packageList)
-        self.dataManager.get_client().do_delete('/repos/%s/packages' % repoName, data={'PackageRefs': packageList})
-        self.updateList()
+                self.repo_dictionary[repo_name].append(current_item.text())
+        print(package_list)
+        self.data_manager.get_client().do_delete('/repos/%s/packages' % repo_name, data={'PackageRefs': package_list})
+        self.update_list()
 
     # TODO: disable buttons if no packages...
-    def reloadComponent(self):
+    def reload_component(self):
         return
 
 

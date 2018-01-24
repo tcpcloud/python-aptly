@@ -14,14 +14,14 @@ from data_manager import DataManager
 from aptly.publisher import Publish
 import time
 
+
 class Window(QMainWindow):
 
     def __init__(self, dataManager, parent=None):
         super(Window, self).__init__(parent)
         self.setWindowTitle("python-aptly GUI")
 
-
-        mainWidget = QWidget(self)
+        main_widget = QWidget(self)
         layout = QGridLayout()
         self.tabs = QTabWidget()
         self.tabs.addTab(SnapshotTab(dataManager), "Snapshot management")
@@ -29,11 +29,10 @@ class Window(QMainWindow):
         self.tabs.addTab(PackagePromotion(dataManager), "Package Promotion")
         self.tabs.addTab(ComponentPromotion(dataManager), "Component Promotion")
 
-
-        mainWidget.setLayout(layout)
+        main_widget.setLayout(layout)
         layout.addWidget(self.tabs)
         self.tabs.currentChanged.connect(self.foo)
-        self.setCentralWidget(mainWidget)
+        self.setCentralWidget(main_widget)
 
         menubar = QMenuBar()
         menubar.addMenu('shit')
@@ -41,10 +40,7 @@ class Window(QMainWindow):
 
     def foo(self, item):
         t = self.tabs.currentWidget()
-        t.reloadComponent()
-
-
-
+        t.reload_component()
 
 
 class DataThread(QThread):
@@ -52,8 +48,8 @@ class DataThread(QThread):
     def __init__(self, dataManager, bar, label):
         super(DataThread, self).__init__()
         self.client = dataManager.client
-        self.dataManager = dataManager
-        self.progressDialog = bar
+        self.data_manager = dataManager
+        self.progress_dialog = bar
         self.label = label
         self.cancelled = False
 
@@ -67,7 +63,7 @@ class DataThread(QThread):
             self.terminate()
 
         i = 0
-        nbMax = len(publishes)
+        nb_max = len(publishes)
 
         for publish in publishes:
             i += 1
@@ -75,7 +71,7 @@ class DataThread(QThread):
                                    else "", publish['Prefix'] + "/" if
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
-            self.progressDialog.setValue(i / nbMax * 100)
+            self.progress_dialog.setValue(i / nb_max * 100)
             # offen results in SIGSEGV
             #self.label.setText("Loading {}".format(name))
             tmp = Publish(self.client, name, load=True, storage=publish.get('Storage', "local"))
@@ -92,19 +88,19 @@ class DataThread(QThread):
                 self.terminate()
 
         self.label.setText("Successfully loaded publishes")
-        self.dataManager.publish_dict = publish_dict
+        self.data_manager.publish_dict = publish_dict
 
 
 class SplashScreen(QDialog):
 
-    def loadMainWindow(self):
+    def load_main_window(self):
         if not self.dataThread.cancelled:
             self.setModal(False)
             self.window = Window(self.dataManager)
             self.window.show()
             self.close()
 
-    def loadPublishConnector(self):
+    def load_publish_connector(self):
         self.infoLabel.setText("Initializing connection")
         self.infoScroll.setWidget(self.infoLabel)
         self.progressBar.setValue(0)
@@ -121,14 +117,14 @@ class SplashScreen(QDialog):
         self.dataThread.start()
         self.loadButton.disconnect()
         self.loadButton.setText("Cancel")
-        self.loadButton.clicked.connect(self.abortLoad)
-        self.dataThread.finished.connect(self.loadMainWindow)
+        self.loadButton.clicked.connect(self.abort_load)
+        self.dataThread.finished.connect(self.load_main_window)
 
-    def abortLoad(self):
+    def abort_load(self):
         self.dataThread.cancelled = True
         self.loadButton.setText("Load publish")
         self.loadButton.disconnect()
-        self.loadButton.clicked.connect(self.loadPublishConnector)
+        self.loadButton.clicked.connect(self.load_publish_connector)
 
     def __init__(self):
         super(SplashScreen, self).__init__()
@@ -154,8 +150,6 @@ class SplashScreen(QDialog):
         self.progressBar.setMaximum(100)
         self.progressBar.setValue(0)
 
-        #self.infoScroll.setFixedHeight(35)
-
         self.layout.addWidget(self.urlLabel)
         self.layout.addWidget(self.urlEdit)
         self.layout.addWidget(self.loadButton)
@@ -163,7 +157,7 @@ class SplashScreen(QDialog):
         self.layout.addWidget(self.infoScroll)
         self.layout.addWidget(self.quitButton)
 
-        self.loadButton.clicked.connect(self.loadPublishConnector)
+        self.loadButton.clicked.connect(self.load_publish_connector)
         self.quitButton.clicked.connect(self.close)
 
 

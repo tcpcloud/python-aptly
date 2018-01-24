@@ -11,79 +11,80 @@ from aptly.publisher import Publish, PublishManager
 from aptly.client import Aptly
 from data_manager import WaitDialog
 
+
 class ComponentPromotion(QWidget):
-    def __init__(self, dataManager,parent=None):
+    def __init__(self, data_manager, parent=None):
         super(ComponentPromotion, self).__init__(parent)
 
-        self.dataManager = dataManager
+        self.data_manager = data_manager
         # initialize widgets
-        self.componentLabel = QLabel("List of components")
-        self.sourcePublishBox = QComboBox()
-        self.sourcePublishLabel = QLabel("Source")
-        self.targetPublishBox = QComboBox()
-        self.targetPublishLabel = QLabel("Target")
-        self.publishButton = QPushButton("Promote")
+        self.component_label = QLabel("List of components")
+        self.source_publish_box = QComboBox()
+        self.source_publish_label = QLabel("Source")
+        self.target_publish_box = QComboBox()
+        self.target_publish_label = QLabel("Target")
+        self.publish_button = QPushButton("Promote")
 
-        self.packageLabel = QListView()
-        self.packageLabel.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.package_label = QListView()
+        self.package_label.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         # place widget in the layout
         layout = QGridLayout()
-        layout.addWidget(self.sourcePublishBox, 0, 0, 1, 1)
-        layout.addWidget(self.componentLabel, 0, 1, 1, 1)
-        layout.addWidget(self.targetPublishBox, 0, 2, 1, 1)
-        layout.addWidget(self.packageLabel, 1, 1, 2, 1)
-        layout.addWidget(self.publishButton, 1, 2, 1, 1)
+        layout.addWidget(self.source_publish_box, 0, 0, 1, 1)
+        layout.addWidget(self.component_label, 0, 1, 1, 1)
+        layout.addWidget(self.target_publish_box, 0, 2, 1, 1)
+        layout.addWidget(self.package_label, 1, 1, 2, 1)
+        layout.addWidget(self.publish_button, 1, 2, 1, 1)
         self.setLayout(layout)
 
         # initialize data
-        self.model = QStandardItemModel(self.packageLabel)
-        self.fillPublishBox()
+        self.model = QStandardItemModel(self.package_label)
+        self.fill_publish_box()
         # controllers
-        self.sourcePublishBox.currentIndexChanged.connect(self.recreatePackageBox)
-        self.publishButton.clicked.connect(self.updatePublish)
+        self.source_publish_box.currentIndexChanged.connect(self.recreate_package_box)
+        self.publish_button.clicked.connect(self.update_publish)
 
-    def loadSnapshot(self, name):
-        return Publish.get_packages(self.dataManager.get_client(), "snapshots", name)
+    def load_snapshot(self, name):
+        return Publish.get_packages(self.data_manager.get_client(), "snapshots", name)
 
-    def updatePublish(self):
-        target_publish = self.targetPublishBox.currentText()
-        source_publish = self.sourcePublishBox.currentText()
+    def update_publish(self):
+        target_publish = self.target_publish_box.currentText()
+        source_publish = self.source_publish_box.currentText()
         component_list = []
 
         for index in reversed(range(self.model.rowCount())):
-            currentItem = self.model.item(index)
-            if currentItem and currentItem.checkState() != 0:
-                component_list.append(currentItem.text())
+            current_item = self.model.item(index)
+            if current_item and current_item.checkState() != 0:
+                component_list.append(current_item.text())
 
-        waitDialog = WaitDialog(target_publish, self.dataManager, self, source_publish=source_publish,
-                                components=component_list, type="components")
+        wait_dialog = WaitDialog(target_publish, self.data_manager, self, source_publish=source_publish,
+                                 components=component_list, type="components")
 
-    def fillPublishBox(self):
-        self.sourcePublishBox.clear()
-        self.targetPublishBox.clear()
-        publishes = self.dataManager.get_publish_list()
+    def fill_publish_box(self):
+        self.source_publish_box.clear()
+        self.target_publish_box.clear()
+        publishes = self.data_manager.get_publish_list()
         for publish in publishes:
-            self.sourcePublishBox.addItem(publish)
-            self.targetPublishBox.addItem(publish)
-        self.sourcePublishBox.update()
-        self.targetPublishBox.update()
+            self.source_publish_box.addItem(publish)
+            self.target_publish_box.addItem(publish)
+        self.source_publish_box.update()
+        self.target_publish_box.update()
         if len(publishes) > 0:
-            self.recreatePackageBox()
+            self.recreate_package_box()
 
-    def recreatePackageBox(self):
+    def recreate_package_box(self):
         self.model.removeRows(0, self.model.rowCount())
-        currentPublish = self.dataManager.get_publish(self.sourcePublishBox.currentText())
-        currentPublish.load()
-        components = currentPublish.components.keys()
+        current_publish = self.data_manager.get_publish(self.source_publish_box.currentText())
+        current_publish.load()
+        components = current_publish.components.keys()
 
         for component in components:
             item = QStandardItem(component)
             item.setCheckable(True)
             item.setCheckState(Qt.Checked)
             self.model.appendRow(item)
-        self.packageLabel.setModel(self.model)
+        self.package_label.setModel(self.model)
 
-    def reloadComponent(self):
-        if len(self.dataManager.get_publish_list()) > 0:
-            self.recreatePackageBox()
+    def reload_component(self):
+        if len(self.data_manager.get_publish_list()) > 0:
+            self.recreate_package_box()

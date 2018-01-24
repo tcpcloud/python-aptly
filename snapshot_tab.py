@@ -32,7 +32,7 @@ class SnapshotTab(QWidget):
         layout.addWidget(self.reload_button, 1, 2, 1, 1)
         self.setLayout(layout)
 
-        # initialize datas
+        # initialize data
         self.model = QStandardItemModel(self.package_label)
         self.fill_publish_box()
         self.recreate_package_box()
@@ -52,7 +52,6 @@ class SnapshotTab(QWidget):
         # TODO: create function for snapshot name?
         component = self.component_box.currentText()
         waitDialog = WaitDialog(publish_name, self.dataManager, self, component=component, package_list=package_list)
-
 
     def fill_publish_box(self):
         self.publish_box.clear()
@@ -89,7 +88,7 @@ class SnapshotTab(QWidget):
             self.model.appendRow(item)
         self.package_label.setModel(self.model)
 
-    def reloadComponent(self):
+    def reload_component(self):
         if len(self.dataManager.get_publish_list()) > 0:
             self.update_snapshot_box()
             self.recreate_package_box()

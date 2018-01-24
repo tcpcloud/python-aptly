@@ -16,68 +16,66 @@ class PackagePromotion(QWidget):
     def __init__(self, dataManager,parent=None):
         super(PackagePromotion, self).__init__(parent)
 
-        self.dataManager = dataManager
+        self.data_manager = dataManager
 
         # initialize widgets
-        self.componentBox = QComboBox()
-        self.componentLabel = QLabel("Component")
-        self.sourcePublishBox = QComboBox()
-        self.sourcePublishLabel = QLabel("Source")
-        self.targetPublishBox = QComboBox()
-        self.targetPublishLabel = QLabel("Target")
-        self.publishButton = QPushButton("Promote")
+        self.component_box = QComboBox()
+        self.component_label = QLabel("Component")
+        self.source_publish_box = QComboBox()
+        self.source_publish_label = QLabel("Source")
+        self.target_publish_box = QComboBox()
+        self.target_publish_label = QLabel("Target")
+        self.publish_button = QPushButton("Promote")
 
-        self.packageLabel = QListView()
-        self.packageLabel.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.package_label = QListView()
+        self.package_label.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         # place widget in the layout
         layout = QGridLayout()
-        layout.addWidget(self.sourcePublishBox, 0, 0, 1, 1)
-        layout.addWidget(self.componentBox, 0, 1, 1, 1)
-        layout.addWidget(self.targetPublishBox, 0, 2, 1, 1)
-        layout.addWidget(self.packageLabel, 1, 1, 2, 1)
-        layout.addWidget(self.publishButton, 1, 2, 1, 1)
+        layout.addWidget(self.source_publish_box, 0, 0, 1, 1)
+        layout.addWidget(self.component_box, 0, 1, 1, 1)
+        layout.addWidget(self.target_publish_box, 0, 2, 1, 1)
+        layout.addWidget(self.package_label, 1, 1, 2, 1)
+        layout.addWidget(self.publish_button, 1, 2, 1, 1)
         self.setLayout(layout)
 
         # initialize data
-        self.model = QStandardItemModel(self.packageLabel)
-        self.fillPublishBox()
-        self.recreatePackageBox()
+        self.model = QStandardItemModel(self.package_label)
+        self.fill_publish_box()
+        self.recreate_package_box()
         # controllers
-        self.sourcePublishBox.currentIndexChanged.connect(self.updateSnapshotBox)
-        self.componentBox.currentIndexChanged.connect(self.recreatePackageBox)
-        self.publishButton.clicked.connect(self.updatePublish)
+        self.source_publish_box.currentIndexChanged.connect(self.update_snapshot_box)
+        self.component_box.currentIndexChanged.connect(self.recreate_package_box)
+        self.publish_button.clicked.connect(self.update_publish)
 
-    def loadSnapshot(self, name):
-        return Publish.get_packages(self.dataManager.get_client(), "snapshots", name)
+    def load_snapshot(self, name):
+        return Publish.get_packages(self.data_manager.get_client(), "snapshots", name)
 
-    def updatePublish(self):
-        targetPublish = self.dataManager.get_publish(self.targetPublishBox.currentText())
-        targetPublish.load()
-        packageList = set()
+    def update_publish_old(self):
+        target_publish = self.data_manager.get_publish(self.target_publish_box.currentText())
+        target_publish.load()
+        package_list = set()
         # find a better way to get packages
         for index in reversed(range(self.model.rowCount())):
-            currentItem = self.model.item(index)
-            if currentItem and currentItem.checkState() != 0:
-                packageList.add(currentItem.text())
+            current_item = self.model.item(index)
+            if current_item and current_item.checkState() != 0:
+                package_list.add(current_item.text())
 
-        component = self.componentBox.currentText()
-        oldSnapshotName = targetPublish.components[component][0]
-        newSnapshotName = DataManager.generate_snapshot_name(oldSnapshotName)
+        component = self.component_box.currentText()
+        old_snapshot_name = target_publish.components[component][0]
+        new_snapshot_name = DataManager.generate_snapshot_name(old_snapshot_name)
 
-        old_packages = targetPublish._get_packages(self.dataManager.get_client(), "snapshots", oldSnapshotName)
+        old_packages = target_publish._get_packages(self.data_manager.get_client(), "snapshots", old_snapshot_name)
         for package in old_packages:
-            packageList.add(package)
+            package_list.add(package)
 
-        targetPublish.create_snapshots_from_packages(list(packageList), newSnapshotName, 'Snapshot created from GUI for component {}'.format(component))
-        targetPublish.replace_snapshot(component, newSnapshotName)
-        targetPublish.do_publish(recreate=False, merge_snapshots=False)
+        target_publish.create_snapshots_from_packages(list(package_list), new_snapshot_name, 'Snapshot created from GUI for component {}'.format(component))
+        target_publish.replace_snapshot(component, new_snapshot_name)
+        target_publish.do_publish(recreate=False, merge_snapshots=False)
 
-
-    def updatePublish(self):
-        target_publish_name = self.targetPublishBox.currentText()
-        source_publish_name = self.sourcePublishBox.currentText()
-        component = self.componentBox.currentText()
+    def update_publish(self):
+        target_publish_name = self.target_publish_box.currentText()
+        component = self.component_box.currentText()
 
         package_list = []
         for index in reversed(range(self.model.rowCount())):
@@ -85,52 +83,49 @@ class PackagePromotion(QWidget):
             if currentItem and currentItem.checkState() != 0:
                 package_list.append(currentItem.text())
 
-        waitDialog = WaitDialog(target_publish_name, self.dataManager, self, component=component, package_list=package_list, merge=True)
+        wait_dialog = WaitDialog(target_publish_name, self.data_manager, self, component=component,
+                                 package_list=package_list, merge=True)
 
-
-
-
-    def fillPublishBox(self):
-        self.sourcePublishBox.clear()
-        self.targetPublishBox.clear()
-        publishes = self.dataManager.get_publish_list()
+    def fill_publish_box(self):
+        self.source_publish_box.clear()
+        self.target_publish_box.clear()
+        publishes = self.data_manager.get_publish_list()
         for publish in publishes:
-            self.sourcePublishBox.addItem(publish)
-            self.targetPublishBox.addItem(publish)
-        self.sourcePublishBox.update()
-        self.targetPublishBox.update()
+            self.source_publish_box.addItem(publish)
+            self.target_publish_box.addItem(publish)
+        self.source_publish_box.update()
+        self.target_publish_box.update()
         # update snapshot box
         if len(publishes) > 0:
-            self.updateSnapshotBox()
+            self.update_snapshot_box()
 
-    def updateSnapshotBox(self):
-        name = self.sourcePublishBox.currentText()
-        currentPublish = self.dataManager.get_publish(name)
-        currentPublish.load()
-        self.componentBox.clear()
-        for component in sorted(list(currentPublish.components.keys())):
-            self.componentBox.addItem(component)
-        self.componentBox.update()
+    def update_snapshot_box(self):
+        name = self.source_publish_box.currentText()
+        current_publish = self.data_manager.get_publish(name)
+        current_publish.load()
+        self.component_box.clear()
+        for component in sorted(list(current_publish.components.keys())):
+            self.component_box.addItem(component)
+        self.component_box.update()
 
-    def recreatePackageBox(self):
+    def recreate_package_box(self):
         self.model.removeRows(0, self.model.rowCount())
-        component = self.componentBox.currentText()
-        publish =self.sourcePublishBox.currentText()
+        component = self.component_box.currentText()
+        publish = self.source_publish_box.currentText()
 
         # empty sometimes?
         if not component:
             return
 
-        packages = self.dataManager.get_package_from_publish_component(publish, component)
+        packages = self.data_manager.get_package_from_publish_component(publish, component)
 
         for package in packages:
             item = QStandardItem(package)
             item.setCheckable(True)
             item.setCheckState(Qt.Checked)
             self.model.appendRow(item)
-        self.packageLabel.setModel(self.model)
+        self.package_label.setModel(self.model)
 
-    def reloadComponent(self):
-        if len(self.dataManager.get_publish_list()) > 0:
-            self.updateSnapshotBox()
-
+    def reload_component(self):
+        if len(self.data_manager.get_publish_list()) > 0:
+            self.update_snapshot_box()

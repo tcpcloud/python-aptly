@@ -27,9 +27,9 @@ class WaitDialog(QDialog):
         else:
             self.publishThread = PublishComponentThread(publish_name, self.progress_bar, data_manager, **kwargs)
 
-        self.setupUI()
+        self.setup_ui()
 
-    def setupUI(self):
+    def setup_ui(self):
         self.setWindowTitle("python-aptly GUI")
         self.setFixedSize(600, 200)
         self.setVisible(True)
@@ -52,6 +52,7 @@ class AptlyThread(QThread):
         self.progress_bar = progress_bar
         self.data_manager = data_manager
 
+
 class PublishThread(AptlyThread):
     def __init__(self, publish_name, progress_bar, data_manager, **kwargs):
         super(PublishThread, self).__init__(publish_name, progress_bar, data_manager)
@@ -71,8 +72,8 @@ class PublishThread(AptlyThread):
 
         try:
             if self.package_list:
-                self.publish.create_snapshots_from_packages(self.package_list, self.new_snapshot,
-                                                            'Snapshot created from GUI for component {}'.format(
+                self.publish.create_snapshot_from_packages(self.package_list, self.new_snapshot,
+                                                           'Snapshot created from GUI for component {}'.format(
                                                                 self.component))
                 self.publish.replace_snapshot(self.component, self.new_snapshot)
                 self.progress_bar.setValue(50)
