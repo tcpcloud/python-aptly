@@ -2,7 +2,7 @@
 
 
 from PyQt5.QtWidgets import (QGridLayout, QLabel, QProgressBar, QDialog)
-from workers.aptly_workers import (PublishThread, PublishComponentThread)
+from aptlygui.workers.aptly_workers import (PublishThread, PublishComponentThread)
 
 
 class WaitDialog(QDialog):

@@ -2,10 +2,9 @@
 
 from PyQt5.QtWidgets import (QGridLayout, QProgressBar, QPushButton, QLabel, QLineEdit, QScrollArea, QDialog)
 
-from views.main_window import Window
-from workers.aptly_workers import DataThread
-from data_manager import DataManager
-
+from aptlygui.views.main_window import Window
+from aptlygui.workers.aptly_workers import DataThread
+from aptlygui.model.data_manager import DataManager
 
 class SplashScreen(QDialog):
 

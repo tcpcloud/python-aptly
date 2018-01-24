@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import (QGridLayout, QMenuBar, QWidget, QMainWindow, QTabWidget)
 
-from views.snapshot_tab import SnapshotTab
-from views.repository_tab import RepositoryTab
-from views.package_promotion import PackagePromotion
-from views.component_promotion import ComponentPromotion
+from aptlygui.views.snapshot_tab import SnapshotTab
+from aptlygui.views.repository_tab import RepositoryTab
+from aptlygui.views.package_promotion import PackagePromotion
+from aptlygui.views.component_promotion import ComponentPromotion
 
 
 class Window(QMainWindow):

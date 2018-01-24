@@ -5,7 +5,7 @@ from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QComboBox, QGridLayout, QLabel, QPushButton, QWidget, QListView, QAbstractItemView)
 
 from aptly.publisher import Publish
-from views.wait_dialog import WaitDialog
+from aptlygui.views.wait_dialog import WaitDialog
 
 
 class PackagePromotion(QWidget):
