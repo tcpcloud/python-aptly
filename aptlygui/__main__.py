@@ -3,7 +3,7 @@
 from PyQt5.QtWidgets import QApplication
 from aptlygui.views.splash_screen import SplashScreen
 
-if __name__ == '__main__':
+def main():
     import sys
 
     app = QApplication(sys.argv)
@@ -11,3 +11,6 @@ if __name__ == '__main__':
     splash = SplashScreen()
 
     sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()

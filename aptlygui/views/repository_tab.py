@@ -35,7 +35,7 @@ class RepositoryTab(QWidget):
         self.delete_button.clicked.connect(self.remove_package)
 
     def load_repository(self):
-        repos = Publish._get_repositories(self.data_manager.get_client())
+        repos = self.data_manager.client.do_get('/repos')
         repo_list = []
         for repo in repos:
             repo_list.append(repo["Name"])

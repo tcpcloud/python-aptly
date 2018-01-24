@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QComboBox, QGridLayout, QPushButton, QWidget, QListView, QAbstractItemView)
 
-from views.wait_dialog import WaitDialog
+from aptlygui.views.wait_dialog import WaitDialog
 
 
 class SnapshotTab(QWidget):
