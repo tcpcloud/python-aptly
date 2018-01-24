@@ -90,7 +90,6 @@ class PublishThread(AptlyThread):
                 self.publish.replace_snapshot(self.component, self.new_snapshot)
                 self.progress.emit(50)
         except Exception as e:
-            # TODO: Add label?
             self.log.emit(repr(e), "error")
             self.progress.emit(0)
             self.publish.replace_snapshot(self.component, self.old_snapshot)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-from PyQt5.QtWidgets import (QGridLayout, QLabel, QDialog)
+from PyQt5.QtWidgets import (QGridLayout, QDialog)
 from aptlygui.widgets import (QCustomProgressBar, QLogConsole)
 from aptlygui.workers.aptly_workers import (PublishThread, PublishComponentThread)
 
