@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
 
 from aptly.publisher import Publish, PublishManager
 from aptly.client import Aptly
-from data_manager import DataManager
+from data_manager import DataManager, WaitDialog
 
 
 class PackagePromotion(QWidget):
@@ -63,7 +63,6 @@ class PackagePromotion(QWidget):
 
         component = self.componentBox.currentText()
         oldSnapshotName = targetPublish.components[component][0]
-        st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
         newSnapshotName = DataManager.generate_snapshot_name(oldSnapshotName)
 
         old_packages = targetPublish._get_packages(self.dataManager.get_client(), "snapshots", oldSnapshotName)
@@ -73,6 +72,22 @@ class PackagePromotion(QWidget):
         targetPublish.create_snapshots_from_packages(list(packageList), newSnapshotName, 'Snapshot created from GUI for component {}'.format(component))
         targetPublish.replace_snapshot(component, newSnapshotName)
         targetPublish.do_publish(recreate=False, merge_snapshots=False)
+
+
+    def updatePublish(self):
+        target_publish_name = self.targetPublishBox.currentText()
+        source_publish_name = self.sourcePublishBox.currentText()
+        component = self.componentBox.currentText()
+
+        package_list = []
+        for index in reversed(range(self.model.rowCount())):
+            currentItem = self.model.item(index)
+            if currentItem and currentItem.checkState() != 0:
+                package_list.append(currentItem.text())
+
+        waitDialog = WaitDialog(target_publish_name, self.dataManager, self, component=component, package_list=package_list, merge=True)
+
+
 
 
     def fillPublishBox(self):

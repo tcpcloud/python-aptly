@@ -19,8 +19,6 @@ class RepositoryTab(QWidget):
         # initialize widgets
         self.repoBox = QComboBox()
         self.deleteButton = QPushButton("Delete")
-        self.snapshotButton = QPushButton("Snapshot")
-        self.minimalSnapshotButton = QPushButton("Minimal snapshot")
         self.packageLabel = QListView()
         self.packageLabel.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
@@ -28,8 +26,6 @@ class RepositoryTab(QWidget):
         layout = QGridLayout()
         layout.addWidget(self.repoBox, 0, 0, 1, 1)
         layout.addWidget(self.deleteButton, 0, 1, 1, 1)
-        layout.addWidget(self.snapshotButton, 0, 2, 1, 1)
-        layout.addWidget(self.minimalSnapshotButton, 1, 2, 1, 1)
         layout.addWidget(self.packageLabel, 1, 1, 2, 1)
         self.setLayout(layout)
 
@@ -67,7 +63,6 @@ class RepositoryTab(QWidget):
                 self.model.appendRow(item)
             self.packageLabel.setModel(self.model)
 
-
     def removePackage(self):
         packageList = []
         repoName = self.repoBox.currentText()
@@ -81,14 +76,6 @@ class RepositoryTab(QWidget):
         print(packageList)
         self.dataManager.get_client().do_delete('/repos/%s/packages' % repoName, data={'PackageRefs': packageList})
         self.updateList()
-
-    def createMinimalSnapshot(self):
-        # TODO
-        i = 10
-
-    def createSnapshot(self):
-        # TODO
-        i = 100
 
     # TODO: disable buttons if no packages...
     def reloadComponent(self):

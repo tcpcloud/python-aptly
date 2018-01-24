@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
                              QGridLayout, QLabel, QLineEdit, QMenuBar, QPushButton, QTextEdit, QWidget, QMainWindow,
                              QListView, QAbstractItemView, QAction, QTabWidget, QBoxLayout, QProgressBar, QDialog, QScrollArea, QSizePolicy)
 
-from SnapshotTab import SnapshotTab
-from RepositoryTab import RepositoryTab
+from snapshot_tab import SnapshotTab
+from repository_tab import RepositoryTab
 from package_promotion import PackagePromotion
 from component_promotion import ComponentPromotion
 from data_manager import DataManager
@@ -76,6 +76,7 @@ class DataThread(QThread):
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
             self.progressDialog.setValue(i / nbMax * 100)
+            # offen results in SIGSEGV
             #self.label.setText("Loading {}".format(name))
             tmp = Publish(self.client, name, load=True, storage=publish.get('Storage', "local"))
             publish_dict[name] = tmp
@@ -107,13 +108,13 @@ class SplashScreen(QDialog):
         self.infoLabel.setText("Initializing connection")
         self.infoScroll.setWidget(self.infoLabel)
         self.progressBar.setValue(0)
+
         try:
-            self.dataManager.create_client(self.url)
+            self.dataManager.create_client(self.urlEdit.text())
         except Exception as e:
             print(repr(e))
             self.infoLabel.setText(repr(e))
             self.infoScroll.setWidget(self.infoLabel)
-
             return
 
         self.dataThread = DataThread(self.dataManager, self.progressBar, self.infoLabel)
@@ -140,8 +141,6 @@ class SplashScreen(QDialog):
         self.dataManager = DataManager()
         self.infoLabel = QLabel("")
         self.infoScroll = QScrollArea()
-        self.url = ""
-
 
         self.setupUI()
 
@@ -166,6 +165,7 @@ class SplashScreen(QDialog):
 
         self.loadButton.clicked.connect(self.loadPublishConnector)
         self.quitButton.clicked.connect(self.close)
+
 
 if __name__ == '__main__':
     import sys

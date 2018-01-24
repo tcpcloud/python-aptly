@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
 
 from aptly.publisher import Publish, PublishManager
 from aptly.client import Aptly
-
+from data_manager import WaitDialog
 
 class ComponentPromotion(QWidget):
     def __init__(self, dataManager,parent=None):
@@ -47,16 +47,17 @@ class ComponentPromotion(QWidget):
         return Publish.get_packages(self.dataManager.get_client(), "snapshots", name)
 
     def updatePublish(self):
-        targetPublish = self.dataManager.get_publish(self.targetPublishBox.currentText())
-        targetPublish.load()
+        target_publish = self.targetPublishBox.currentText()
+        source_publish = self.sourcePublishBox.currentText()
+        component_list = []
 
         for index in reversed(range(self.model.rowCount())):
             currentItem = self.model.item(index)
             if currentItem and currentItem.checkState() != 0:
-                component = currentItem.text()
-                newSnapshot = self.dataManager.get_publish(self.sourcePublishBox.currentText()).components[component][0]
-                targetPublish.replace_snapshot(component, newSnapshot)
-        targetPublish.do_publish(merge_snapshots=False)
+                component_list.append(currentItem.text())
+
+        waitDialog = WaitDialog(target_publish, self.dataManager, self, source_publish=source_publish,
+                                components=component_list, type="components")
 
     def fillPublishBox(self):
         self.sourcePublishBox.clear()
