@@ -57,7 +57,7 @@ class SplashScreen(QDialog):
 
     def setupUI(self):
         self.setWindowTitle("python-aptly GUI")
-        self.setFixedSize(600, 200)
+        self.setFixedSize(600, 400)
         self.setVisible(True)
         self.setLayout(self.layout)
 
