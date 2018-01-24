@@ -6,6 +6,7 @@ from aptly.publisher import Publish
 import time
 import datetime
 
+
 class DataManager:
     def __init__(self):
         self.publish_dict = {}
@@ -30,10 +31,11 @@ class DataManager:
     def get_package_from_publish_component(self, publish, component):
         snapshot = self.publish_dict[publish].components[component][0]
 
-        return sorted(Publish._get_packages(self.client, "snapshots", snapshot))
+        return sorted(Publish._get_packages(self.client, "snapshots",
+                                            snapshot))
 
     @staticmethod
     def generate_snapshot_name(old_snapshot):
-        st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-        return "{}-{}-{}".format(old_snapshot, "merged-gui", st)
-
+        timestamp = datetime.datetime.fromtimestamp(
+            time.time()).strftime('%Y%m%d%H%M%S')
+        return "{}-{}-{}".format(old_snapshot, "merged-gui", timestamp)

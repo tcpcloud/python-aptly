@@ -3,7 +3,7 @@
 from PyQt5.QtWidgets import (QGridLayout, QProgressBar, QPushButton, QLabel, QLineEdit, QScrollArea, QDialog)
 
 from views.main_window import Window
-from workers.aptly_workers import  DataThread
+from workers.aptly_workers import DataThread
 from data_manager import DataManager
 
 

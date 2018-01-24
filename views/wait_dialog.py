@@ -4,6 +4,7 @@
 from PyQt5.QtWidgets import (QGridLayout, QLabel, QProgressBar, QDialog)
 from workers.aptly_workers import (PublishThread, PublishComponentThread)
 
+
 class WaitDialog(QDialog):
 
     def __init__(self, publish_name, data_manager, parent, **kwargs):

@@ -28,14 +28,16 @@ class DataThread(QThread):
 
         for publish in publishes:
             i += 1
-            name = "{}{}{}".format(publish['Storage'] + ":" if publish['Storage']
+            name = "{}{}{}".format(publish['Storage'] + ":"
+                                   if publish['Storage']
                                    else "", publish['Prefix'] + "/" if
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
+
             self.progress_dialog.setValue(i / nb_max * 100)
-            # often results in SIGSEGV
-            #self.label.setText("Loading {}".format(name))
-            tmp = Publish(self.client, name, load=True, storage=publish.get('Storage', "local"))
+
+            tmp = Publish(self.client, name, load=True,
+                          storage=publish.get('Storage', "local"))
             publish_dict[name] = tmp
 
             for snapshot in tmp.publish_snapshots:
@@ -76,12 +78,9 @@ class PublishThread(AptlyThread):
 
     def run(self):
 
-
         try:
             if self.package_list:
-                self.publish.create_snapshot_from_packages(self.package_list, self.new_snapshot,
-                                                           'Snapshot created from GUI for component {}'.format(
-                                                                self.component))
+                self.publish.create_snapshot_from_packages(self.package_list, self.new_snapshot, 'Snapshot created from GUI for component {}'.format(self.component))
                 self.publish.replace_snapshot(self.component, self.new_snapshot)
                 self.progress_bar.setValue(50)
         except Exception as e:

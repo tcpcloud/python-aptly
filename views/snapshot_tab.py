@@ -2,12 +2,13 @@
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import (QComboBox, QGridLayout, QLabel, QPushButton, QWidget, QListView, QAbstractItemView)
+from PyQt5.QtWidgets import (QComboBox, QGridLayout, QPushButton, QWidget, QListView, QAbstractItemView)
 
 from views.wait_dialog import WaitDialog
 
+
 class SnapshotTab(QWidget):
-    def __init__(self, dataManager,parent=None):
+    def __init__(self, dataManager, parent=None):
         self.dataManager = dataManager
         super(SnapshotTab, self).__init__(parent)
 
@@ -88,4 +89,3 @@ class SnapshotTab(QWidget):
         if len(self.dataManager.get_publish_list()) > 0:
             self.update_snapshot_box()
             self.recreate_package_box()
-

@@ -78,9 +78,3 @@ class RepositoryTab(QWidget):
     # TODO: disable buttons if no packages...
     def reload_component(self):
         return
-
-
-
-
-
-
