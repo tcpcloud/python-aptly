@@ -26,11 +26,6 @@ class PublishManager(object):
         self.storage = storage
         self.timestamp = int(time.time())
 
-    def get_component_snapshot(self, component):
-        if component in self.components.keys():
-            return self.components[component][0]
-        return ""
-
     def publish(self, distribution, storage=""):
         """
         Get or create publish
@@ -286,6 +281,11 @@ class Publish(object):
                 diff[component] = diff_snapshots
 
         return (diff, equal)
+
+    def get_component_snapshot(self, component):
+        if component in self.components.keys():
+            return self.components[component][0]
+        return ""
 
     def replace_snapshot(self, component, new_snapshot):
         newlist = []
