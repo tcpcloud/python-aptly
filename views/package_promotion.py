@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-import datetime
-import time
-from PyQt5.QtCore import QStringListModel, Qt
-from PyQt5.QtGui import QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
-                             QGridLayout, QLabel, QLineEdit, QMenuBar, QPushButton, QTextEdit, QWidget, QMainWindow,
-                             QListView, QAbstractItemView, QAction, QTabWidget)
 
-from aptly.publisher import Publish, PublishManager
-from aptly.client import Aptly
-from data_manager import DataManager, WaitDialog
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import (QComboBox, QGridLayout, QLabel, QPushButton, QWidget, QListView, QAbstractItemView)
+
+from aptly.publisher import Publish
+from views.wait_dialog import WaitDialog
 
 
 class PackagePromotion(QWidget):
-    def __init__(self, dataManager,parent=None):
+    def __init__(self, data_manager, parent=None):
         super(PackagePromotion, self).__init__(parent)
 
-        self.data_manager = dataManager
+        self.data_manager = data_manager
 
         # initialize widgets
         self.component_box = QComboBox()

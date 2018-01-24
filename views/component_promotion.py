@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-import datetime
-import time
-from PyQt5.QtCore import QStringListModel, Qt
-from PyQt5.QtGui import QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import (QApplication, QComboBox, QDataWidgetMapper,
-                             QGridLayout, QLabel, QLineEdit, QMenuBar, QPushButton, QTextEdit, QWidget, QMainWindow,
-                             QListView, QAbstractItemView, QAction, QTabWidget)
 
-from aptly.publisher import Publish, PublishManager
-from aptly.client import Aptly
-from data_manager import WaitDialog
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import (QComboBox, QGridLayout, QLabel, QPushButton, QWidget, QListView, QAbstractItemView)
+
+from aptly.publisher import Publish
+from views.wait_dialog import WaitDialog
 
 
 class ComponentPromotion(QWidget):
