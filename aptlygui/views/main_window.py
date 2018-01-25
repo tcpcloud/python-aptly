@@ -25,10 +25,6 @@ class Window(QMainWindow):
         self.tabs.currentChanged.connect(self.foo)
         self.setCentralWidget(main_widget)
 
-        menubar = QMenuBar()
-        menubar.addMenu('shit')
-        menubar.addMenu('shit2')
-
     def foo(self, item):
         t = self.tabs.currentWidget()
         t.reload_component()
