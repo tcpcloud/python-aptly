@@ -78,7 +78,7 @@ class PublishThread(AptlyThread):
         self.old_snapshot = self.publish.get_component_snapshot(self.component)
         self.new_snapshot = self.data_manager.generate_snapshot_name(self.old_snapshot)
 
-        if merge:
+        if merge and self.component in self.publish.components.keys():
             self.package_list += self.publish._get_packages(self.data_manager.client, "snapshots", self.old_snapshot)
             self.package_list = list(set(self.package_list))
 

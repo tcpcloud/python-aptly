@@ -71,7 +71,6 @@ class ComponentPromotion(QWidget):
     def recreate_package_box(self):
         self.model.removeRows(0, self.model.rowCount())
         current_publish = self.data_manager.get_publish(self.source_publish_box.currentText())
-        current_publish.load()
         components = current_publish.components.keys()
 
         for component in components:

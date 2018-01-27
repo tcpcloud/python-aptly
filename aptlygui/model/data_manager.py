@@ -25,7 +25,6 @@ class DataManager:
         return sorted(self.publish_dict.keys())
 
     def get_publish(self, name):
-        self.publish_dict[name].load()
         return self.publish_dict[name]
 
     def get_package_from_publish_component(self, publish, component):

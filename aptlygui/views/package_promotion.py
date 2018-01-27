@@ -76,7 +76,6 @@ class PackagePromotion(QWidget):
     def update_snapshot_box(self):
         name = self.source_publish_box.currentText()
         current_publish = self.data_manager.get_publish(name)
-        current_publish.load()
         self.component_box.clear()
         for component in sorted(list(current_publish.components.keys())):
             self.component_box.addItem(component)
