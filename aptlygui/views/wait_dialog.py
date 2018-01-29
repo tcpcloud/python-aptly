@@ -26,7 +26,7 @@ class WaitDialog(QDialog):
 
         self.publishThread.progress.connect(self.progress_bar.on_progress_received)
         self.publishThread.log.connect(self.logConsole.on_log_received)
-        self.publishThread.finished.connect(self.close)
+        self.publishThread.finished.connect(self.handle_worker)
 
         self.action_button.clicked.connect(self.start_action)
         self.quit_button.clicked.connect(self.close)
@@ -48,3 +48,7 @@ class WaitDialog(QDialog):
     def start_action(self):
         self.action_button.setDisabled(True)
         self.publishThread.start()
+
+    def handle_worker(self):
+        if self.progress_bar.value() == 100:
+            self.close()

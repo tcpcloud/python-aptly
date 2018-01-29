@@ -89,13 +89,12 @@ class PublishThread(AptlyThread):
                 self.publish.create_snapshot_from_packages(self.package_list, self.new_snapshot, 'Snapshot created from GUI for component {}'.format(self.component))
                 self.publish.replace_snapshot(self.component, self.new_snapshot)
                 self.progress.emit(50)
+                self.publish.do_publish(merge_snapshots=False)
+                self.progress.emit(100)
         except Exception as e:
             self.log.emit(repr(e), "error")
             self.progress.emit(0)
             self.publish.replace_snapshot(self.component, self.old_snapshot)
-
-        self.publish.do_publish(merge_snapshots=False)
-        self.progress.emit(100)
 
 
 class PublishComponentThread(AptlyThread):
@@ -110,5 +109,9 @@ class PublishComponentThread(AptlyThread):
         self.log.emit("Publishing {0}, components {1}".format(self.publish_name, self.components), "info")
         for component in self.components:
             self.publish.replace_snapshot(component, self.source_publish.get_component_snapshot(component))
-        self.publish.do_publish(merge_snapshots=False)
-        self.progress.emit(100)
+        try:
+            self.publish.do_publish(merge_snapshots=False)
+            self.progress.emit(100)
+        except Exception as e:
+            self.log.emit(repr(e), "error")
+            self.progress.emit(0)
