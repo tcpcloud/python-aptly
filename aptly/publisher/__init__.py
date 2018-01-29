@@ -80,7 +80,8 @@ class PublishManager(object):
             raise Exception('Publish(es) required not found')
 
         for publish in save_list:
-            save_path = ''.join([dump_dir, '/', prefix, publish.name.replace('/', '-'), '.yml'])
+            storage = '' if not publish.storage else '-{}-'.format(publish.storage)
+            save_path = ''.join([dump_dir, '/', prefix, storage, publish.name.replace('/', '-'), '.yml'])
             publish.save_publish(save_path)
 
     def _publish_match(self, publish, names=False, name_only=False):
@@ -481,7 +482,8 @@ class Publish(object):
 
             to_publish.append(component_name)
 
-            snapshot_name = '{}-{}'.format("restored", saved_component.get('snapshot'))
+            timestamp = time.strftime("%Y%m%d%H%M%S")
+            snapshot_name = '{}-{}-{}'.format("restored", timestamp, saved_component.get('snapshot'))
             lg.debug("Creating snapshot %s for component %s of packages: %s"
                      % (snapshot_name, component_name, saved_packages))
 
