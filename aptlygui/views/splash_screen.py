@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QGridLayout, QPushButton, QLabel, QLineEdit, QDialo
 from aptlygui.widgets import (QCustomProgressBar, QLogConsole)
 from aptlygui.views.main_window import Window
 from aptlygui.workers.aptly_workers import DataThread
-from aptlygui.model.data_manager import DataManager
+from aptlygui.model import DataManager
 
 
 class SplashScreen(QDialog):
