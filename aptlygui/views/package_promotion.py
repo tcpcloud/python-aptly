@@ -5,35 +5,29 @@ from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QComboBox, QGridLayout, QLabel, QPushButton, QWidget, QListView, QAbstractItemView)
 
 from aptly.publisher import Publish
+from aptlygui.views.list_tab import ListTab
 from aptlygui.views.wait_dialog import WaitDialog
 
 
-class PackagePromotion(QWidget):
+class PackagePromotion(ListTab):
     def __init__(self, data_manager, parent=None):
-        super(PackagePromotion, self).__init__(parent)
+        super(PackagePromotion, self).__init__(data_manager, parent)
 
-        self.data_manager = data_manager
-
-        # initialize widgets
         self.component_box = QComboBox()
         self.component_label = QLabel("Component")
         self.source_publish_box = QComboBox()
         self.source_publish_label = QLabel("Source")
         self.target_publish_box = QComboBox()
         self.target_publish_label = QLabel("Target")
-        self.publish_button = QPushButton("Promote")
+        publish_button = self.create_button("Promote", self.update_publish)
 
-        self.package_label = QListView()
-        self.package_label.setEditTriggers(QAbstractItemView.NoEditTriggers)
-
-        # place widget in the layout
-        layout = QGridLayout()
-        layout.addWidget(self.source_publish_box, 0, 0, 1, 1)
-        layout.addWidget(self.component_box, 0, 1, 1, 1)
-        layout.addWidget(self.target_publish_box, 0, 2, 1, 1)
-        layout.addWidget(self.package_label, 1, 1, 2, 1)
-        layout.addWidget(self.publish_button, 1, 2, 1, 1)
-        self.setLayout(layout)
+        self.add_form_element("Source publish", self.source_publish_box)
+        self.add_form_element("Source component", self.component_box)
+        self.add_form_element("Target publish", self.target_publish_box)
+        self.add_form_element("")
+        self.add_form_element("Action", publish_button)
+        self.add_select_buttons()
+        self.add_form_element("Packages")
 
         # initialize data
         self.model = QStandardItemModel(self.package_label)
@@ -42,7 +36,8 @@ class PackagePromotion(QWidget):
         # controllers
         self.source_publish_box.currentIndexChanged.connect(self.update_snapshot_box)
         self.component_box.currentIndexChanged.connect(self.recreate_package_box)
-        self.publish_button.clicked.connect(self.update_publish)
+
+        self.configure_layout()
 
     def load_snapshot(self, name):
         return Publish.get_packages(self.data_manager.get_client(), "snapshots", name)

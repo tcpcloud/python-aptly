@@ -10,6 +10,7 @@ import datetime
 class DataManager:
     def __init__(self):
         self.publish_dict = {}
+        self.repo_dict = {}
         self.client = None
 
     def create_client(self, url, timeout=600):

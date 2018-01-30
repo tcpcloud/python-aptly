@@ -17,15 +17,23 @@ class DataThread(QThread):
 
     def run(self):
         publish_dict = {}
+        repo_dict = {}
 
         try:
             publishes = self.client.do_get('/publish')
+            repos = self.client.do_get('/repos')
         except Exception as e:
             self.log.emit(e, "error")
             self.terminate()
 
         i = 0
-        nb_max = len(publishes)
+        nb_max = len(publishes) + len(repos)
+
+        for repo in repos:
+            i += 1
+            self.log.emit("Loading repository {0}".format(repo["Name"]), "info")
+            self.progress.emit(i / nb_max * 100)
+            repo_dict[repo["Name"]] = sorted(Publish._get_packages(self.data_manager.get_client(), "repos", repo["Name"]))
 
         for publish in publishes:
             i += 1
@@ -55,6 +63,7 @@ class DataThread(QThread):
 
         self.log.emit("Successfully loaded publishes", "success")
         self.data_manager.publish_dict = publish_dict
+        self.data_manager.repo_dict = repo_dict
 
 
 class AptlyThread(QThread):

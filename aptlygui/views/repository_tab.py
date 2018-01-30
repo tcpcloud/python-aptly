@@ -1,38 +1,32 @@
 #!/usr/bin/env python3
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import (QComboBox, QGridLayout, QPushButton, QWidget, QListView, QAbstractItemView)
+from PyQt5.QtGui import QStandardItem
+from PyQt5.QtWidgets import QComboBox
 
-from aptly.publisher import Publish, PublishManager
+from aptlygui.views.list_tab import ListTab
 
 
-class RepositoryTab(QWidget):
+class RepositoryTab(ListTab):
 
     def __init__(self, data_manager, parent=None):
-        super(RepositoryTab, self).__init__(parent)
+        super(RepositoryTab, self).__init__(data_manager, parent)
 
-        self.data_manager = data_manager
-        # initialize widgets
         self.repo_box = QComboBox()
-        self.delete_button = QPushButton("Delete")
-        self.package_label = QListView()
-        self.package_label.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-        # place widget in the layout
-        layout = QGridLayout()
-        layout.addWidget(self.repo_box, 0, 0, 1, 1)
-        layout.addWidget(self.delete_button, 0, 1, 1, 1)
-        layout.addWidget(self.package_label, 1, 1, 2, 1)
-        self.setLayout(layout)
+        delete_button = self.create_button("Delete", self.remove_package)
 
-        # initialize data
-        self.model = QStandardItemModel(self.package_label)
-        self.repo_dictionary = {}
+        self.add_form_element("Repository", self.repo_box)
+        self.add_form_element("")
+        self.add_form_element("Action", delete_button)
+        self.add_select_buttons()
+        self.add_form_element("Packages")
+
         # controllers
         self.load_repository()
         self.repo_box.currentIndexChanged.connect(self.update_list)
-        self.delete_button.clicked.connect(self.remove_package)
+
+        self.configure_layout()
 
     def load_repository(self):
         repos = self.data_manager.client.do_get('/repos')
@@ -49,12 +43,9 @@ class RepositoryTab(QWidget):
         current_repo = self.repo_box.currentText()
         if current_repo == "":
             return
-        if current_repo not in self.repo_dictionary.keys():
-            self.repo_dictionary[current_repo] = sorted(Publish._get_packages(self.data_manager.get_client(), "repos",
-                                                                              current_repo))
 
-        if self.repo_dictionary[current_repo]:
-            for package in self.repo_dictionary[current_repo]:
+        if self.data_manager.repo_dict[current_repo]:
+            for package in self.data_manager.repo_dict[current_repo]:
                 item = QStandardItem(package)
                 item.setCheckable(True)
                 item.setCheckState(Qt.Unchecked)
@@ -64,17 +55,15 @@ class RepositoryTab(QWidget):
     def remove_package(self):
         package_list = []
         repo_name = self.repo_box.currentText()
-        self.repo_dictionary[repo_name] = []
+        self.data_manager.repo_dict[repo_name] = []
         for index in range(self.model.rowCount()):
             current_item = self.model.item(index)
             if current_item and current_item.checkState() != 0:
                 package_list.append(current_item.text())
             else:
-                self.repo_dictionary[repo_name].append(current_item.text())
-        print(package_list)
+                self.data_manager.repo_dict[repo_name].append(current_item.text())
         self.data_manager.get_client().do_delete('/repos/%s/packages' % repo_name, data={'PackageRefs': package_list})
         self.update_list()
 
-    # TODO: disable buttons if no packages...
     def reload_component(self):
         return
