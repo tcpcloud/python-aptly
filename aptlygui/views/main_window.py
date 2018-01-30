@@ -22,9 +22,9 @@ class Window(QMainWindow):
 
         main_widget.setLayout(layout)
         layout.addWidget(self.tabs)
-        self.tabs.currentChanged.connect(self.foo)
+        self.tabs.currentChanged.connect(self.update_tab_component)
         self.setCentralWidget(main_widget)
 
-    def foo(self, item):
+    def update_tab_component(self, item):
         t = self.tabs.currentWidget()
         t.reload_component()
