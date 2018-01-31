@@ -29,6 +29,8 @@ Installation
 
 ::
   
+  # it is necessary to install a newer python-apt
+  apt-get install python3-apt
   pip3 install git+https://github.com/chnyda/python-aptly-gui.git
 
 Usage
