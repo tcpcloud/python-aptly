@@ -2,7 +2,35 @@
 python-aptly
 ============
 
-Aptly REST API client and useful tooling
+Aptly REST API client, GUI and useful tooling
+
+
+GUI
+=========
+
+GUI for Aptly
+
+Presentation
+--------
+
+Using PyQt5, aptly-gui simplifies the use of Aptly.
+
+Managing publishes, snapshots and repositories can be done by graphically selecting items.
+
+Features
+--------
+
+- Remove or add packages from publishes
+
+- Promote packages from one publish to another publish
+
+- Promote components across publishes
+
+Usage
+--------
+::
+  
+  aptly-gui
 
 Publisher
 =========
