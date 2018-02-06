@@ -43,6 +43,10 @@ class DataThread(QThread):
                                    publish['Prefix'] else "",
                                    publish['Distribution'])
 
+            # Only publishes made of snapshots are loaded, others are managed in the repository tab
+            if publish['SourceKind'] != 'snapshot':
+                continue
+
             self.progress.emit(i / nb_max * 100)
             self.log.emit("Loading publish {0}".format(name), "info")
 
