@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtWidgets import QComboBox
 
-from aptlygui.views.list_tab import ListTab
+from aptlygui.widgets.list_tab import ListTab
 
 
 class RepositoryTab(ListTab):

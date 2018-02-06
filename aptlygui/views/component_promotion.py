@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QComboBox, QGridLayout, QLabel, QPushButton, QWidge
 
 from aptly.publisher import Publish
 from aptlygui.views.wait_dialog import WaitDialog
-from aptlygui.views.list_tab import ListTab
+from aptlygui.widgets.list_tab import ListTab
 
 
 class ComponentPromotion(ListTab):
