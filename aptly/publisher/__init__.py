@@ -166,39 +166,57 @@ class PublishManager(object):
                 self.client.do_delete('/repos/%s/packages' % repo_name, data={'PackageRefs': packages})
 
     def cleanup_snapshots(self):
-        snapshots = self.client.do_get('/snapshots', {'sort': 'time'})
-        exclude = []
+        # requesting graph.dot always works, even if graphviz (dot) is not installed
+        dot_data = self.client.do_get('/graph.dot')
 
-        # Add currently published snapshots into exclude list
-        publishes = self.client.do_get('/publish')
-        for publish in publishes:
-            exclude.extend(
-                [x['Name'] for x in publish['Sources']]
-            )
+        # extract edges from dot-data
+        # edges = list of pairs with (node_id, node_id)
+        edges = re.findall('"([^"]+)"->"([^"]+)";', dot_data)
 
-        # Add last snapshots into exclude list
-        # TODO: ignore snapshots that are source for merged snapshots
-        snapshot_latest = []
-        for snapshot in snapshots:
-            base_name = snapshot['Name'].split('-')[0]
-            if base_name not in snapshot_latest:
-                snapshot_latest.append(base_name)
-                if snapshot['Name'] not in exclude:
-                    lg.debug("Not deleting latest snapshot %s" % snapshot['Name'])
-                    exclude.append(snapshot['Name'])
+        # extract nodes from dot-data
+        # list of tuples with (node_id, node_type, node_name)
+        # node_type is one of 'Repo'|'Snapshot'|'Publish'
+        nodes_raw = re.findall('[ \t]+"([^"]+)".*label="{(Repo|Snapshot|Published) ([^|]+)[^\}"]+}"', dot_data)
 
-        exclude = self.list_uniq(exclude)
+        # convert nodes_raw into nodes
+        # nodes = dict of node_id to node
+        # node = (node_type, node_name)
+        nodes = {node_id: (node_type, node_name) for node_id, node_type, node_name in nodes_raw}
 
-        for snapshot in snapshots:
-            if snapshot['Name'] not in exclude:
-                lg.info("Deleting snapshot %s" % snapshot['Name'])
-                try:
-                    self.client.do_delete('/snapshots/%s' % snapshot['Name'])
-                except AptlyException as e:
-                    if e.res.status_code == 409:
-                        lg.warning("Snapshot %s is being used, can't delete" % snapshot['Name'])
-                    else:
-                        raise
+        # start with published and flood fill other nodes
+        published_node_ids = [key for key in nodes if nodes[key][0] == 'Published']
+
+        # do flood fill
+        while True:
+            # get a list of source node_ids of incoming edges
+            incoming_node_ids = [edge_from for edge_from, edge_to in edges if edge_to in published_node_ids and edge_from not in published_node_ids]
+
+            # add incoming node_ids
+            published_node_ids.extend(incoming_node_ids)
+
+            # no new nodes, we are finished
+            if len(incoming_node_ids) == 0:
+                break
+
+        # we got published nodes, invert the set
+        non_published_node_ids = [node_id for node_id in nodes if node_id not in published_node_ids]
+
+        # list of nodes with (node_type, node_name)
+        unreleased_nodes = [nodes[node_id] for node_id in non_published_node_ids]
+
+        # use only nodes of type 'Snapshot'
+        unreleased_snapshots = [node[1] for node in unreleased_nodes if node[0] == 'Snapshot']
+
+        # actually delete snapshots that are not published
+        for snapshot in unreleased_snapshots:
+            lg.info("Deleting snapshot %s" % snapshot)
+            try:
+                self.client.do_delete('/snapshots/%s' % snapshot)
+            except AptlyException as e:
+                if e.res.status_code == 409:
+                    lg.warning("Snapshot %s is being used, can't delete" % snapshot)
+                else:
+                    raise
 
 
 class Publish(object):
