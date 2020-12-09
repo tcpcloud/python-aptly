@@ -25,7 +25,7 @@ def load_config(config):
 
 def get_latest_snapshot(snapshots, name):
     for snapshot in reversed(snapshots):
-        if re.match(r'%s-\d+' % name, snapshot['Name']):
+        if re.match(r'%s[-_]\d+' % name, snapshot['Name']):
             return snapshot['Name']
 
 
