@@ -176,7 +176,7 @@ class PublishManager(object):
         # extract nodes from dot-data
         # list of tuples with (node_id, node_type, node_name)
         # node_type is one of 'Repo'|'Snapshot'|'Publish'
-        nodes_raw = re.findall('[ \t]+"([^"]+)".*label="{(Repo|Snapshot|Published) ([^|]+)[^\}"]+}"', dot_data)
+        nodes_raw = re.findall('[ \t]+"([^"]+)".*label="{(Repo|Snapshot|Published) ([^|]+)[^}"]+}"', dot_data)
 
         # convert nodes_raw into nodes
         # nodes = dict of node_id to node
@@ -588,7 +588,7 @@ class Publish(object):
         """
         if not ref:
             return None
-        parsed = re.match('(.*)\ (.*)\ (.*)\ (.*)', ref)
+        parsed = re.match('(.*) (.*) (.*) (.*)', ref)
         return parsed.groups()
 
     def add(self, snapshot, component='main'):
