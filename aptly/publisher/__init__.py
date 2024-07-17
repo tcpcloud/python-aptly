@@ -13,7 +13,7 @@ lg = logging.getLogger(__name__)
 
 def load_publish(publish):
     with open(publish, 'r') as publish_file:
-        return yaml.load(publish_file)
+        return yaml.safe_load(publish_file)
 
 
 class PublishManager(object):

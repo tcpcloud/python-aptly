@@ -20,7 +20,7 @@ lg = logging.getLogger('aptly-publisher')
 
 def load_config(config):
     with open(config, 'r') as fh:
-        return yaml.load(fh)
+        return yaml.safe_load(fh)
 
 
 def get_latest_snapshot(snapshots, name):
